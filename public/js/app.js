@@ -80,11 +80,10 @@ function drawTabs(activeId) {
 // =======================================================================
 function viewLogin() {
   fab.hidden = true;
-  } else if (f.type === 'select') {
-        const selectedVal = f.value ?? f.options[0]?.value;
-        input = h('select', { name: f.name, required: f.required },
-          f.options.map((o) => h('option', { value: o.value, selected: String(o.value) === String(selectedVal) }, o.label)));
-      }
+  abas.replaceChildren();
+  const form = h('form', {
+    onsubmit: (e) => {
+      e.preventDefault();
       token.set(new FormData(form).get('t').trim());
       refresh();
     },
@@ -155,7 +154,23 @@ function projectCard(p) {
 async function fillCardBody(id, corpo) {
   corpo.replaceChildren(h('p', { class: 'rotulo', style: { marginTop: '16px' } }, 'Carregando…'));
   const p = await api.get(`/projects/${id}`);
- async function newProject(categoryId) {
+  // Mostra só o que está aberto (não concluído), até 3
+  const next = p.steps.filter((s) => s.status !== 'concluido').slice(0, 3);
+  corpo.replaceChildren(h('div', {},
+    h('p', { class: 'rotulo', style: { marginTop: '16px' } }, 'Próximos passos'),
+    next.length
+      ? next.map((s) => h('div', { style: { display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '12px' } },
+          statusTag(s.status), h('span', {}, s.what)))
+      : h('p', {}, 'Nenhum step aberto.'),
+    p.budgets.map((b) => h('div', { style: { marginTop: '16px' } },
+      h('span', { class: 'rotulo' }, b.title, ' · '),
+      h('span', { class: 'dinheiro' }, `${money(b.balance_cents)} de ${money(b.target_cents)}`),
+      bar(b.balance_cents, b.target_cents, 'mauve'))),
+    h('div', { class: 'card-acoes' },
+      h('a', { class: 'btn', href: `#/p/${id}`, style: { textDecoration: 'none' } }, 'Abrir projeto →'))));
+}
+
+async function newProject(categoryId) {
   if (!state.categories.length) {
     toast('Crie uma categoria primeiro em Ajustes (⋯)');
     return;
@@ -179,22 +194,6 @@ async function fillCardBody(id, corpo) {
   } catch (err) {
     toast(err.message);
   }
-}
-
-async function newProject(categoryId) {
-  const data = await sheet({
-    title: 'Novo projeto',
-    fields: [
-      { name: 'title', label: 'Nome', required: true, placeholder: 'Aulas de teatro' },
-      { name: 'summary', label: 'Por que este projeto existe', type: 'textarea',
-        hint: 'Uma frase. Ela aparece no card.' },
-      { name: 'category_id', label: 'Categoria', type: 'select', value: categoryId,
-        options: state.categories.map((c) => ({ value: c.id, label: c.name })) },
-    ],
-  });
-  if (!data) return;
-  const p = await api.post('/projects', data);
-  location.hash = `#/p/${p.id}`;
 }
 
 // =======================================================================
