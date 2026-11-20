@@ -7,7 +7,7 @@ compatibility_date = "2026-10-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "bunker"
-database_id = "COLE-AQUI-O-ID-DO-D1"   # aparece ao rodar: npx wrangler d1 create bunker
+database_id = "14aa330f-08fe-4e5b-bad2-5b94523a6213"   # aparece ao rodar: npx wrangler d1 create bunker
 migrations_dir = "migrations"
 
 # Variáveis públicas (não-secretas). A senha APP_TOKEN NÃO vai aqui: é secret.
