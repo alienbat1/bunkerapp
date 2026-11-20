@@ -77,18 +77,25 @@ const routes = [
   // sem precisar de um segundo pedido.
   ['GET', '/projects', async ({ env, url }) => {
     const cat = url.searchParams.get('category');
+    const horizon = url.searchParams.get('horizon');
     const archived = url.searchParams.get('archived') === '1' ? 1 : 0;
+    const where = ['p.archived = ?'];
+    const args = [archived];
+    if (cat) { where.push('p.category_id = ?'); args.push(cat); }
+    if (horizon) { where.push('p.horizon = ?'); args.push(horizon); }
+
     const { results } = await env.DB.prepare(
-      `SELECT p.*,
-         COUNT(s.id)                                         AS steps_total,
+      `SELECT p.*, c.name AS category_name,
+         COUNT(s.id)                                             AS steps_total,
          SUM(CASE WHEN s.status = 'concluido' THEN 1 ELSE 0 END) AS steps_done,
          SUM(CASE WHEN s.status = 'bloqueado' THEN 1 ELSE 0 END) AS steps_blocked
        FROM projects p
+       LEFT JOIN categories c ON c.id = p.category_id
        LEFT JOIN steps s ON s.project_id = p.id
-       WHERE p.archived = ? ${cat ? 'AND p.category_id = ?' : ''}
+       WHERE ${where.join(' AND ')}
        GROUP BY p.id
        ORDER BY p.position, p.id`
-    ).bind(...(cat ? [archived, cat] : [archived])).all();
+    ).bind(...args).all();
     return json(results);
   }],
 
@@ -110,22 +117,41 @@ const routes = [
     return json({ ...project, steps: steps.results, budgets: budgets.results });
   }],
 
-  ['POST', '/projects', async ({ env, data }) => {
+['POST', '/projects', async ({ env, data }) => {
     if (!data.title?.trim() || !data.category_id) return fail(400, 'Título e categoria obrigatórios');
     const row = await env.DB.prepare(
-      `INSERT INTO projects (category_id, title, summary) VALUES (?, ?, ?) RETURNING *`
-    ).bind(data.category_id, data.title.trim(), data.summary ?? '').first();
+      `INSERT INTO projects (category_id, title, summary, horizon, honest_note, target_count, current_count, count_unit)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`
+    ).bind(
+      data.category_id,
+      data.title.trim(),
+      data.summary ?? '',
+      data.horizon === 'next_year' ? 'next_year' : 'this_year',
+      data.honest_note ?? '',
+      Math.max(0, Math.round(Number(data.target_count) || 0)),
+      Math.max(0, Math.round(Number(data.current_count) || 0)),
+      (data.count_unit || 'sessões').trim()
+    ).first();
     return json(row, 201);
   }],
 
   ['PATCH', '/projects/:id', async ({ env, params, data }) => {
     const q = buildUpdate('projects', params.id, data,
-      ['title', 'summary', 'category_id', 'position', 'archived']);
+      ['title', 'summary', 'category_id', 'position', 'archived', 'horizon', 'honest_note', 'target_count', 'current_count', 'count_unit']);
     if (!q) return fail(400, 'Nada para atualizar');
     await env.DB.prepare(q.sql).bind(...q.args).run();
     return json({ ok: true });
   }],
 
+  ['POST', '/projects/:id/tick', async ({ env, params, data }) => {
+    const delta = Math.round(Number(data.delta) || 1);
+    const row = await env.DB.prepare(
+      `UPDATE projects
+       SET current_count = MAX(0, current_count + ?), updated_at = datetime('now')
+       WHERE id = ? RETURNING *`
+    ).bind(delta, params.id).first();
+    return json(row);
+  }],
   ['DELETE', '/projects/:id', async ({ env, params }) => {
     await env.DB.prepare('DELETE FROM projects WHERE id = ?').bind(params.id).run();
     return json({ ok: true });
