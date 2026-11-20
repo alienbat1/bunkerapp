@@ -1,13 +1,6 @@
 // =====================================================================
 // app.js — o cérebro: decide qual tela mostrar e desenha
 // =====================================================================
-// Como funciona a navegação (o "roteador"):
-//   O endereço depois do # diz a tela.  #/c/2  → categoria 2
-//                                       #/p/7  → projeto 7 em tela cheia
-//                                       #/orcamentos, #/o/3, #/ajustes
-//   Quando o # muda, o navegador avisa ("hashchange") e redesenhamos.
-//   Vantagem: o botão voltar do iPhone funciona sozinho.
-// =====================================================================
 
 import { api, token } from './api.js';
 import { h, STATUS, statusTag, money, toCents, bar, toast, sheet } from './ui.js';
@@ -17,17 +10,133 @@ const tela = document.getElementById('tela');
 const abas = document.getElementById('abas');
 const fab  = document.getElementById('fab');
 
-// Guarda o que já foi carregado, para não pedir de novo a cada toque
 const state = {
   categories: [],
   currentCat: Number(localStorage.getItem('bunker-cat')) || null,
 };
+
+// ---------- utilidades do ano e cálculo honesto ------------------------
+function yearStats() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const start = new Date(year, 0, 1);
+  const end = new Date(year, 11, 31, 23, 59, 59);
+  const daysLeft = Math.max(0, Math.ceil((end - now) / 86400000));
+  const yearPct = Math.min(100, Math.max(1, Math.round(((now - start) / (end - start)) * 100)));
+  return { year, daysLeft, yearPct };
+}
+
+function projectProgress(p) {
+  if (p.target_count > 0) {
+    const pct = Math.min(100, Math.round((p.current_count / p.target_count) * 100));
+    return { pct, done: p.current_count, total: p.target_count, isHabit: true };
+  }
+  const total = p.steps_total || 0;
+  const done = p.steps_done || 0;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  return { pct, done, total, isHabit: false };
+}
+
+function evaluateHonesty(p) {
+  const { pct, done, total, isHabit } = projectProgress(p);
+  const { year, daysLeft, yearPct } = yearStats();
+  const nextYear = year + 1;
+
+  if (p.horizon === 'next_year') {
+    return {
+      badge: { cls: 'warn', text: `Para ${nextYear}` },
+      note: p.honest_note || `Planejado para ${nextYear}. Sem culpa este ano — foco no que é prioridade agora.`,
+    };
+  }
+
+  if (pct >= 100) {
+    return { badge: { cls: 'ok', text: 'Concluído' }, note: p.honest_note || '' };
+  }
+
+  if (isHabit) {
+    const remaining = Math.max(0, total - done);
+    if (remaining > daysLeft) {
+      const realisticMore = Math.max(1, Math.min(remaining, Math.floor(daysLeft / 3)));
+      return {
+        badge: { cls: 'low', text: `${pct}% · fora do prazo` },
+        note: p.honest_note ||
+          `Meta de ${total} ${p.count_unit} não é alcançável nos ${daysLeft} dias restantes de ${year}. ` +
+          `Mas fechar mais ${realisticMore} ${p.count_unit} antes de 1º de janeiro já reduz a distância para ${nextYear}.`,
+      };
+    }
+    if (pct + 15 < yearPct) {
+      return {
+        badge: { cls: 'warn', text: `${pct}% · ritmo lento` },
+        note: p.honest_note || `Faltam ${remaining} ${p.count_unit} em ${daysLeft} dias. Ainda dá, mas exige constância semanal.`,
+      };
+    }
+    return { badge: { cls: 'ok', text: `${pct}% · no ritmo` }, note: p.honest_note || '' };
+  }
+
+  if (total === 0) {
+    return {
+      badge: { cls: 'low', text: 'Não iniciado' },
+      note: p.honest_note || 'Nenhum step definido ainda. Quebre em 2 ou 3 passos curtos ou mova para o próximo ano.',
+    };
+  }
+
+  const remainingSteps = total - done;
+  if (daysLeft <= 45 && pct < 40 && remainingSteps >= 3) {
+    return {
+      badge: { cls: 'low', text: `${pct}% · apertado` },
+      note: p.honest_note || `Faltam ${remainingSteps} steps em ${daysLeft} dias. Se não for essencial agora, considere mover para ${nextYear}.`,
+    };
+  }
+
+  if (pct >= 60) {
+    return {
+      badge: { cls: 'ok', text: `${pct}% · no ritmo` },
+      note: p.honest_note || `Alcançável até o fim de ${year} mantendo o ritmo atual.`,
+    };
+  }
+
+  return {
+    badge: { cls: 'warn', text: `${pct}% · em andamento` },
+    note: p.honest_note || '',
+  };
+}
+
+function yearOverviewBlock(allProjects, budgets) {
+  const { year, daysLeft } = yearStats();
+  const thisYear = allProjects.filter((p) => p.horizon !== 'next_year');
+
+  const rows = state.categories.map((c) => {
+    const items = thisYear.filter((p) => p.category_id === c.id);
+    if (!items.length) return null;
+    const avg = Math.round(items.reduce((acc, p) => acc + projectProgress(p).pct, 0) / items.length);
+    return { label: c.name, pct: avg };
+  }).filter(Boolean);
+
+  if (budgets.length) {
+    const totalTarget = budgets.reduce((a, b) => a + (b.target_cents || 0), 0);
+    const totalBal = budgets.reduce((a, b) => a + (b.balance_cents || 0), 0);
+    const finPct = totalTarget > 0 ? Math.min(100, Math.round((totalBal / totalTarget) * 100)) : 0;
+    rows.push({ label: 'Metas R$', pct: finPct });
+  }
+
+  return h('section', { class: 'ano-resumo' },
+    h('div', { class: 'ano-topo' },
+      h('span', { class: 'rotulo' }, `Visão de ${year}`),
+      h('span', { class: 'rotulo' }, `${daysLeft} dias restantes`)),
+    rows.length
+      ? rows.map((r) => h('div', { class: 'ano-linha' },
+          h('span', { class: 'rotulo' }, r.label),
+          bar(r.pct, 100),
+          h('span', { class: 'ano-pct' }, `${r.pct}%`)))
+      : h('p', { class: 'rotulo', style: { margin: 0 } }, 'Sem metas ativas para este ano.'));
+}
 
 // ---------- roteador ----------------------------------------------------
 const routes = [
   [/^#\/?$/,                () => viewCategory(state.currentCat)],
   [/^#\/c\/(\d+)$/,         (id) => viewCategory(Number(id))],
   [/^#\/p\/(\d+)$/,         (id) => viewProject(Number(id))],
+  [/^#\/ano$/,              () => viewYear()],
   [/^#\/orcamentos$/,       () => viewBudgets()],
   [/^#\/o\/(\d+)$/,         (id) => viewBudget(Number(id))],
   [/^#\/ajustes$/,          () => viewSettings()],
@@ -48,12 +157,9 @@ async function router() {
   window.scrollTo(0, 0);
 }
 
-// Desenha uma tela nova. Aceita listas (ex: projects.map(...)) e ignora
-// valores vazios — assim dá para escrever "condição && elemento".
 const render = (...nodes) =>
   tela.replaceChildren(...nodes.flat(Infinity).filter((n) => n != null && n !== false && n !== ''));
 
-// Redesenha a tela atual (depois de salvar algo)
 const refresh = () => router();
 
 // ---------- abas de categoria ------------------------------------------
@@ -68,11 +174,13 @@ function drawTabs(activeId) {
   abas.replaceChildren(
     ...state.categories.map((c) =>
       h('a', { class: 'aba', href: `#/c/${c.id}`, 'aria-current': c.id === activeId ? 'true' : 'false',
-               style: { display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' } },
+               style: { display: 'inline-flex', alignItems: 'center', textDecoration: 'none' } },
         c.name)),
+    h('a', { class: 'aba', href: '#/ano', 'aria-current': activeId === 'ano' ? 'true' : 'false',
+             style: { display: 'inline-flex', alignItems: 'center', textDecoration: 'none' } }, 'Ano'),
     h('a', { class: 'aba', href: '#/ajustes', 'aria-label': 'Ajustes e categorias',
              'aria-current': activeId === 'ajustes' ? 'true' : 'false',
-             style: { display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' } }, '⋯'));
+             style: { display: 'inline-flex', alignItems: 'center', textDecoration: 'none' } }, '⋯'));
 }
 
 // =======================================================================
@@ -98,7 +206,7 @@ function viewLogin() {
 }
 
 // =======================================================================
-// TELA 1 — categoria: lista de cards de projeto
+// TELA 1 — categoria: visão do ano + lista de cards
 // =======================================================================
 async function viewCategory(catId) {
   await loadCategories();
@@ -107,27 +215,28 @@ async function viewCategory(catId) {
   drawTabs(state.currentCat);
 
   const cat = state.categories.find((c) => c.id === state.currentCat);
-  const projects = await api.get(`/projects?category=${state.currentCat}`);
+  const [allProjects, budgets] = await Promise.all([
+    api.get('/projects'),
+    api.get('/budgets'),
+  ]);
+  const projects = allProjects.filter((p) => p.category_id === state.currentCat);
 
   fab.onclick = () => newProject(state.currentCat);
   fab.setAttribute('aria-label', 'Novo projeto');
 
   render(
+    yearOverviewBlock(allProjects, budgets),
     h('div', { class: 'cabecalho-secao' },
       h('h1', {}, cat?.name ?? 'Bunker'),
-      h('span', { class: 'rotulo' }, `${projects.length} ${projects.length === 1 ? 'projeto' : 'projetos'}`)),
+      h('span', { class: 'rotulo' }, `${projects.length} ${projects.length === 1 ? 'item' : 'itens'}`)),
     projects.length
       ? projects.map(projectCard)
-      : h('div', { class: 'vazio' }, 'Nada aqui ainda. Toque em + para criar o primeiro projeto.'));
+      : h('div', { class: 'vazio' }, 'Nada aqui ainda. Toque em + para criar o primeiro item.'));
 }
 
-// O CARD tem dois estados:
-//   fechado → título, resumo, progresso
-//   aberto  → + próximos steps e metas, e o botão para a tela completa
-// O conteúdo do estado aberto só é buscado no primeiro toque (economiza dados).
 function projectCard(p) {
-  const total = p.steps_total || 0;
-  const done = p.steps_done || 0;
+  const { pct, done, total, isHabit } = projectProgress(p);
+  const honesty = evaluateHonesty(p);
   let loaded = false;
 
   const corpo = h('div', { class: 'card-corpo', hidden: true, id: `corpo-${p.id}` });
@@ -138,25 +247,38 @@ function projectCard(p) {
       const open = cabeca.getAttribute('aria-expanded') !== 'true';
       cabeca.setAttribute('aria-expanded', String(open));
       corpo.hidden = !open;
-      if (open && !loaded) { loaded = true; await fillCardBody(p.id, corpo); }
+      if (open && !loaded) { loaded = true; await fillCardBody(p, corpo); }
     },
   },
-    h('h3', {}, h('span', { class: 'seta', 'aria-hidden': 'true' }, '›'), ' ', p.title),
+    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' } },
+      h('h3', {}, h('span', { class: 'seta', 'aria-hidden': 'true' }, '›'), ' ', p.title),
+      h('span', { class: `alerta-tag ${honesty.badge.cls}` }, honesty.badge.text)),
     p.summary && h('p', { class: 'card-resumo' }, p.summary),
     h('div', { class: 'card-meta' },
-      h('span', { class: 'rotulo' }, `${done}/${total} steps`),
+      h('span', { class: 'rotulo' },
+        isHabit ? `${done}/${total} ${p.count_unit} (${pct}%)` : `${done}/${total} steps (${pct}%)`),
       p.steps_blocked > 0 && h('span', { class: 'rotulo trava' }, `${p.steps_blocked} bloqueado${p.steps_blocked > 1 ? 's' : ''}`)),
     bar(done, total));
 
   return h('article', { class: 'card' }, cabeca, corpo);
 }
 
-async function fillCardBody(id, corpo) {
+async function fillCardBody(proj, corpo) {
   corpo.replaceChildren(h('p', { class: 'rotulo', style: { marginTop: '16px' } }, 'Carregando…'));
-  const p = await api.get(`/projects/${id}`);
-  // Mostra só o que está aberto (não concluído), até 3
+  const p = await api.get(`/projects/${proj.id}`);
+  const honesty = evaluateHonesty(p);
   const next = p.steps.filter((s) => s.status !== 'concluido').slice(0, 3);
+
   corpo.replaceChildren(h('div', {},
+    p.target_count > 0 && h('div', { style: { marginTop: '16px', display: 'flex', gap: '8px', alignItems: 'center' } },
+      h('button', {
+        class: 'btn btn-forte',
+        onclick: async () => {
+          await api.post(`/projects/${p.id}/tick`, { delta: 1 });
+          toast(`+1 ${p.count_unit} registrado`);
+          refresh();
+        },
+      }, `+1 ${p.count_unit}`)),
     h('p', { class: 'rotulo', style: { marginTop: '16px' } }, 'Próximos passos'),
     next.length
       ? next.map((s) => h('div', { style: { display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '12px' } },
@@ -166,28 +288,45 @@ async function fillCardBody(id, corpo) {
       h('span', { class: 'rotulo' }, b.title, ' · '),
       h('span', { class: 'dinheiro' }, `${money(b.balance_cents)} de ${money(b.target_cents)}`),
       bar(b.balance_cents, b.target_cents, 'mauve'))),
+    honesty.note && h('div', { class: 'nota-honesta' },
+      h('strong', {}, 'Nota honesta'),
+      honesty.note),
     h('div', { class: 'card-acoes' },
-      h('a', { class: 'btn', href: `#/p/${id}`, style: { textDecoration: 'none' } }, 'Abrir projeto →'))));
+      h('a', { class: 'btn', href: `#/p/${p.id}`, style: { textDecoration: 'none' } }, 'Abrir detalhes →'))));
 }
+
+const projectFields = (p = {}, defaultCatId = null) => {
+  const { year } = yearStats();
+  return [
+    { name: 'title', label: 'Nome', required: true, value: p.title, placeholder: 'Aulas de teatro ou Treino' },
+    { name: 'summary', label: 'Por que isso existe', type: 'textarea', value: p.summary,
+      hint: 'Uma frase. Ela aparece no card.' },
+    { name: 'category_id', label: 'Categoria', type: 'select', value: p.category_id ?? defaultCatId ?? state.categories[0]?.id,
+      options: state.categories.map((c) => ({ value: c.id, label: c.name })) },
+    { name: 'horizon', label: 'Quando', type: 'select', value: p.horizon || 'this_year',
+      options: [
+        { value: 'this_year', label: `Terminar em ${year}` },
+        { value: 'next_year', label: `Levar para ${year + 1}` },
+      ] },
+    { name: 'target_count', label: 'Meta numérica no ano (opcional — para hábitos)', type: 'number', value: p.target_count || '',
+      hint: 'Ex: 150 (deixe vazio se for projeto por steps).' },
+    { name: 'current_count', label: 'Já concluído (se tiver meta numérica)', type: 'number', value: p.current_count || '' },
+    { name: 'count_unit', label: 'Unidade da meta', value: p.count_unit || 'sessões', placeholder: 'sessões, aulas, ligações' },
+    { name: 'honest_note', label: 'Nota honesta personalizada (opcional)', type: 'textarea', value: p.honest_note,
+      hint: 'Se vazio, o app calcula automaticamente com base nos dias restantes do ano.' },
+  ];
+};
 
 async function newProject(categoryId) {
   if (!state.categories.length) {
     toast('Crie uma categoria primeiro em Ajustes (⋯)');
     return;
   }
-
   const data = await sheet({
-    title: 'Novo projeto',
-    fields: [
-      { name: 'title', label: 'Nome', required: true, placeholder: 'Aulas de teatro' },
-      { name: 'summary', label: 'Por que este projeto existe', type: 'textarea',
-        hint: 'Uma frase. Ela aparece no card.' },
-      { name: 'category_id', label: 'Categoria', type: 'select', value: categoryId ?? state.categories[0].id,
-        options: state.categories.map((c) => ({ value: c.id, label: c.name })) },
-    ],
+    title: 'Novo projeto / hábito',
+    fields: projectFields({}, categoryId),
   });
   if (!data) return;
-
   try {
     const p = await api.post('/projects', data);
     location.hash = `#/p/${p.id}`;
@@ -197,7 +336,46 @@ async function newProject(categoryId) {
 }
 
 // =======================================================================
-// TELA 2 — projeto em tela cheia
+// TELA 1B — VISÃO DO ANO (Este ano vs. Próximo ano)
+// =======================================================================
+async function viewYear() {
+  if (!state.categories.length) await loadCategories();
+  drawTabs('ano');
+  const [allProjects, budgets] = await Promise.all([
+    api.get('/projects'),
+    api.get('/budgets'),
+  ]);
+  const { year } = yearStats();
+  const thisYear = allProjects.filter((p) => p.horizon !== 'next_year');
+  const nextYear = allProjects.filter((p) => p.horizon === 'next_year');
+
+  fab.onclick = () => newProject(state.currentCat);
+  fab.setAttribute('aria-label', 'Novo item');
+
+  render(
+    yearOverviewBlock(allProjects, budgets),
+    h('div', { class: 'cabecalho-secao' },
+      h('h1', {}, `${year} vs. ${year + 1}`)),
+
+    h('section', { class: 'bloco', style: { marginTop: '16px' } },
+      h('div', { class: 'cabecalho-secao' },
+        h('h2', {}, `Terminar em ${year}`),
+        h('span', { class: 'rotulo' }, `${thisYear.length} itens`)),
+      thisYear.length
+        ? thisYear.map(projectCard)
+        : h('div', { class: 'vazio' }, `Nenhum item marcado para ${year}.`)),
+
+    h('section', { class: 'bloco' },
+      h('div', { class: 'cabecalho-secao' },
+        h('h2', {}, `Levar para ${year + 1}`),
+        h('span', { class: 'rotulo' }, 'guardado, não abandonado')),
+      nextYear.length
+        ? nextYear.map(projectCard)
+        : h('div', { class: 'vazio' }, `Nada adiado para ${year + 1} ainda.`)));
+}
+
+// =======================================================================
+// TELA 2 — projeto / hábito em tela cheia
 // =======================================================================
 async function viewProject(id) {
   if (!state.categories.length) await loadCategories();
@@ -207,15 +385,34 @@ async function viewProject(id) {
   fab.onclick = () => newStep(id);
   fab.setAttribute('aria-label', 'Novo step');
 
-  const done = p.steps.filter((s) => s.status === 'concluido').length;
+  const { pct, done, total, isHabit } = projectProgress(p);
+  const honesty = evaluateHonesty(p);
 
   render(
     h('a', { class: 'btn btn-leve voltar', href: `#/c/${p.category_id}` }, '← Voltar'),
-    h('h1', {}, p.title),
+    h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' } },
+      h('h1', {}, p.title),
+      h('span', { class: `alerta-tag ${honesty.badge.cls}` }, honesty.badge.text)),
     p.summary && h('p', { style: { marginTop: '12px' } }, p.summary),
-    h('span', { class: 'rotulo' }, `${done} de ${p.steps.length} steps concluídos`),
-    bar(done, p.steps.length),
+    h('span', { class: 'rotulo' },
+      isHabit
+        ? `${done} de ${total} ${p.count_unit} concluídas (${pct}%)`
+        : `${done} de ${total} steps concluídos (${pct}%)`),
+    bar(done, total),
+
+    honesty.note && h('div', { class: 'nota-honesta' },
+      h('strong', {}, 'Nota honesta'),
+      honesty.note),
+
     h('div', { class: 'linha-botoes', style: { justifyContent: 'flex-start' } },
+      isHabit && h('button', {
+        class: 'btn btn-forte',
+        onclick: async () => {
+          await api.post(`/projects/${p.id}/tick`, { delta: 1 });
+          toast(`+1 ${p.count_unit}`);
+          refresh();
+        },
+      }, `+1 ${p.count_unit}`),
       h('button', { class: 'btn', onclick: () => editProject(p) }, 'Editar'),
       h('button', { class: 'btn', onclick: () => archiveProject(p) }, 'Arquivar')),
 
@@ -224,7 +421,7 @@ async function viewProject(id) {
         h('button', { class: 'btn', onclick: () => newStep(id) }, '+ Step')),
       p.steps.length
         ? p.steps.map(stepItem)
-        : h('div', { class: 'vazio' }, 'Quebre o projeto em passos pequenos. O primeiro pode ser só "pesquisar".')),
+        : h('div', { class: 'vazio' }, 'Quebre em passos pequenos e concretos.')),
 
     h('section', { class: 'bloco' },
       h('div', { class: 'cabecalho-secao' }, h('h2', {}, 'Dinheiro'),
@@ -234,7 +431,6 @@ async function viewProject(id) {
         : h('p', { class: 'rotulo' }, 'Nenhuma meta financeira vinculada.')));
 }
 
-// Um STEP: linha curta (o que + status). Tocar abre onde/por quê + ações.
 function stepItem(s) {
   const detalhe = h('div', { class: 'step-detalhe', hidden: true },
     h('dl', {},
@@ -242,7 +438,6 @@ function stepItem(s) {
       h('div', {}, h('dt', {}, 'Por quê'), h('dd', {}, s.why || '—')),
       s.status === 'bloqueado' && h('div', {}, h('dt', {}, 'Travado por'), h('dd', { class: 'trava' }, s.blocked_by || '—')),
       s.due_date && h('div', {}, h('dt', {}, 'Prazo'), h('dd', { class: 'mono' }, s.due_date.split('-').reverse().join('/')))),
-    // Os 4 status como botões grandes: um toque muda
     h('div', { class: 'seletor-status', role: 'group', 'aria-label': 'Mudar status' },
       Object.keys(STATUS).map((key) =>
         h('button', { type: 'button', class: 'status', 'data-s': key, 'aria-pressed': String(key === s.status),
@@ -295,7 +490,6 @@ async function editStep(s) {
 
 async function changeStatus(s, status) {
   const patch = { status };
-  // Bloqueado sem saber o porquê não ajuda ninguém: pergunta na hora
   if (status === 'bloqueado') {
     const data = await sheet({
       title: 'O que está travando?',
@@ -310,8 +504,6 @@ async function changeStatus(s, status) {
   refresh();
 }
 
-// Agenda um push. O campo datetime-local vem no horário do iPhone;
-// o banco guarda em UTC (o relógio "universal" que o Worker usa).
 async function remindStep(s) {
   const data = await sheet({
     title: 'Lembrar deste step',
@@ -332,13 +524,8 @@ async function deleteStep(s) {
 
 async function editProject(p) {
   const data = await sheet({
-    title: 'Editar projeto',
-    fields: [
-      { name: 'title', label: 'Nome', required: true, value: p.title },
-      { name: 'summary', label: 'Por que este projeto existe', type: 'textarea', value: p.summary },
-      { name: 'category_id', label: 'Categoria', type: 'select', value: p.category_id,
-        options: state.categories.map((c) => ({ value: c.id, label: c.name })) },
-    ],
+    title: 'Editar projeto / hábito',
+    fields: projectFields(p),
   });
   if (!data) return;
   await api.patch(`/projects/${p.id}`, data);
@@ -464,7 +651,7 @@ async function editBudget(b) {
 }
 
 // =======================================================================
-// TELA 4 — ajustes: categorias (arquivar, nunca deletar) e notificações
+// TELA 4 — ajustes
 // =======================================================================
 async function viewSettings() {
   await loadCategories();
@@ -506,7 +693,6 @@ async function viewSettings() {
 window.addEventListener('hashchange', router);
 router();
 
-// Registra o service worker: é ele que deixa o app abrir offline e receber push
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
