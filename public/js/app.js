@@ -80,10 +80,11 @@ function drawTabs(activeId) {
 // =======================================================================
 function viewLogin() {
   fab.hidden = true;
-  abas.replaceChildren();
-  const form = h('form', {
-    onsubmit: (e) => {
-      e.preventDefault();
+  } else if (f.type === 'select') {
+        const selectedVal = f.value ?? f.options[0]?.value;
+        input = h('select', { name: f.name, required: f.required },
+          f.options.map((o) => h('option', { value: o.value, selected: String(o.value) === String(selectedVal) }, o.label)));
+      }
       token.set(new FormData(form).get('t').trim());
       refresh();
     },
