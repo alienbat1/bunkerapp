@@ -1,0 +1,19 @@
+# Configuração do WORKER de notificações (separado do site)
+name = "bunker-push"
+main = "index.js"
+compatibility_date = "2026-10-01"
+
+# Acorda a cada 5 minutos
+[triggers]
+crons = ["*/5 * * * *"]
+
+# O MESMO banco do site
+[[d1_databases]]
+binding = "DB"
+database_name = "bunker"
+database_id = "COLE-AQUI-O-ID-DO-D1"
+
+[vars]
+VAPID_PUBLIC_KEY = ""
+VAPID_SUBJECT = "mailto:seu-email@exemplo.com"
+# Secrets (via: npx wrangler secret put NOME): APP_TOKEN, VAPID_PRIVATE_JWK

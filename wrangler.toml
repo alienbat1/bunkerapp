@@ -1,0 +1,15 @@
+# Configuração do SITE (Cloudflare Pages + Functions)
+name = "bunker"
+pages_build_output_dir = "public"      # a pasta que vira o site
+compatibility_date = "2026-10-01"
+
+# Liga o banco D1 ao código: dentro da API ele se chama env.DB
+[[d1_databases]]
+binding = "DB"
+database_name = "bunker"
+database_id = "COLE-AQUI-O-ID-DO-D1"   # aparece ao rodar: npx wrangler d1 create bunker
+migrations_dir = "migrations"
+
+# Variáveis públicas (não-secretas). A senha APP_TOKEN NÃO vai aqui: é secret.
+[vars]
+VAPID_PUBLIC_KEY = ""

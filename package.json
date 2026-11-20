@@ -1,0 +1,16 @@
+{
+  "name": "bunker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev",
+    "db:local": "wrangler d1 migrations apply bunker --local",
+    "db:remoto": "wrangler d1 migrations apply bunker --remote",
+    "exemplo:local": "wrangler d1 execute bunker --local --file=scripts/exemplo-teatro.sql",
+    "vapid": "node scripts/gerar-vapid.mjs",
+    "deploy:push": "cd worker-push && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.40.0"
+  }
+}

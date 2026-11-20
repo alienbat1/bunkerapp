@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover: o app ocupa a tela toda, inclusive atrás do notch -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bunker</title>
+
+  <!-- PWA: o manifesto diz ao iPhone nome, ícone e cores do app instalado -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#F5F2EC">
+
+  <!-- Específico do iPhone (Safari ainda lê estas tags) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Bunker">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
+  <!-- Fontes: títulos, mono e a fonte de leitura para dislexia -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@600;700&family=Space+Mono:wght@400;700&display=swap">
+
+  <link rel="stylesheet" href="/css/bunker.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-linha">
+      <a class="marca" href="#/" style="color:inherit;text-decoration:none">Bunker</a>
+      <a class="btn btn-leve" href="#/orcamentos">Orçamentos</a>
+    </div>
+    <!-- As abas de categoria são desenhadas pelo app.js -->
+    <nav class="abas" id="abas" aria-label="Categorias"></nav>
+  </header>
+
+  <!-- Toda tela é desenhada aqui dentro pelo app.js -->
+  <main id="tela" tabindex="-1"></main>
+
+  <button class="fab" id="fab" aria-label="Adicionar">+</button>
+
+  <!-- type="module" permite usar import/export entre arquivos JS -->
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

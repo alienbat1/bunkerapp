@@ -1,0 +1,5 @@
+# O service worker nunca pode ficar preso em cache, senão as atualizações não chegam
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Content-Type: application/manifest+json

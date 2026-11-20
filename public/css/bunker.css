@@ -1,0 +1,298 @@
+/* =====================================================================
+   BUNKER — estilos
+   =====================================================================
+   Ordem do arquivo:
+   1. Tokens (variáveis)  → mude uma cor AQUI e ela muda no app inteiro
+   2. Base                → corpo, fontes, links
+   3. Estrutura           → topo, abas, conteúdo
+   4. Componentes         → card, step, etiqueta de status, barra de orçamento
+   5. Formulários e folha (bottom sheet)
+   ===================================================================== */
+
+/* ---------- 1. TOKENS -------------------------------------------------- */
+:root {
+  /* Cores de base */
+  --creme:        #F5F2EC;  /* fundo do app */
+  --papel:        #FFFDF9;  /* cards sobre o creme */
+  --faixa:        #EAE4DA;  /* blocos de apoio, trilho da barra */
+  --tinta:        #141211;  /* texto principal e contornos (16.7:1 no creme) */
+  --tinta-suave:  #5C514B;  /* texto secundário (6.9:1) */
+
+  /* Acentos. Regra: cor CHEIA leva texto --tinta em cima.
+     Quando a cor vira LETRA, use a versão -texto (passa 4.5:1). */
+  --rust:         #D95639;
+  --rust-texto:   #A8371F;
+  --mauve:        #CC80A8;
+  --mauve-texto:  #7E3A66;
+
+  /* Tipografia */
+  --f-titulo: "Cormorant Garamond", Georgia, serif;
+  --f-mono:   "Space Mono", "Courier New", monospace;
+  --f-texto:  "Atkinson Hyperlegible", system-ui, sans-serif;
+
+  --t-base:   19px;   /* texto corrido: grande de propósito */
+  --t-peq:    16px;   /* mínimo absoluto no app */
+  --t-rotulo: 14px;   /* Space Mono em caixa: rótulos curtos */
+  --lh:       1.7;    /* entrelinha generosa (dislexia) */
+
+  /* Espaços */
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e6: 24px; --e8: 32px;
+
+  /* Forma */
+  --contorno: 2px solid var(--tinta);
+  --sombra:   3px 3px 0 var(--tinta);   /* sombra dura, sem desfoque */
+  --raio:     4px;
+
+  /* Áreas seguras do iPhone (notch e barra inferior) */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ---------- 2. BASE ---------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--creme);
+  color: var(--tinta);
+  font-family: var(--f-texto);
+  font-size: var(--t-base);
+  line-height: var(--lh);
+  letter-spacing: 0.01em;     /* um respiro entre letras ajuda na leitura */
+  word-spacing: 0.06em;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1, h2, h3 {
+  font-family: var(--f-titulo);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0;
+  letter-spacing: 0;
+}
+h1 { font-size: 40px; }
+h2 { font-size: 30px; }
+h3 { font-size: 25px; }
+
+p { margin: 0 0 var(--e3); max-width: 34em; }  /* linhas curtas: mais fáceis de seguir */
+
+.rotulo {
+  font-family: var(--f-mono);
+  font-size: var(--t-rotulo);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+  line-height: 1.4;
+}
+
+.mono { font-family: var(--f-mono); }
+
+/* Foco visível para teclado; no toque o navegador não mostra */
+:focus-visible { outline: 3px solid var(--rust); outline-offset: 2px; }
+
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; }   /* links na cor do texto, nunca o azul padrão */
+
+/* Respeita quem pede menos movimento no iPhone */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------- 3. ESTRUTURA ----------------------------------------------- */
+.topo {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--creme);
+  padding: calc(var(--safe-top) + var(--e3)) var(--e4) 0;
+  border-bottom: var(--contorno);
+}
+.topo-linha {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--e3); min-height: 48px;
+}
+.marca {
+  font-family: var(--f-titulo); font-weight: 700; font-size: 32px;
+  letter-spacing: 0.02em;
+}
+.marca::first-letter { color: var(--rust-texto); }
+
+/* Abas de categoria: rolam na horizontal */
+.abas {
+  display: flex; gap: var(--e2);
+  overflow-x: auto; scrollbar-width: none;
+  padding: var(--e3) 0;
+  margin: 0 calc(var(--e4) * -1); padding-inline: var(--e4);
+}
+.abas::-webkit-scrollbar { display: none; }
+.aba {
+  flex: none;
+  font-family: var(--f-mono); font-size: var(--t-rotulo);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  min-height: 44px;                  /* alvo de toque mínimo da Apple */
+  padding: 0 var(--e4);
+  background: var(--papel); border: var(--contorno); border-radius: 999px;
+}
+.aba[aria-current="true"] { background: var(--tinta); color: var(--creme); }
+
+main {
+  padding: var(--e6) var(--e4) calc(var(--safe-bottom) + 120px);
+  max-width: 720px; margin: 0 auto;
+}
+
+.cabecalho-secao {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--e3); margin-bottom: var(--e4);
+}
+
+.vazio {
+  border: 2px dashed var(--tinta-suave); border-radius: var(--raio);
+  padding: var(--e6); text-align: center; color: var(--tinta-suave);
+}
+
+/* ---------- 4. COMPONENTES --------------------------------------------- */
+
+/* Botões */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--e2);
+  min-height: 48px; padding: 0 var(--e4);
+  font-family: var(--f-mono); font-size: var(--t-peq); font-weight: 700;
+  background: var(--papel); border: var(--contorno); border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  transition: transform .08s, box-shadow .08s;
+}
+.btn:active { transform: translate(3px, 3px); box-shadow: none; }  /* "afunda" no toque */
+.btn-forte { background: var(--rust); }        /* texto tinta sobre rust: 4.75:1 */
+.btn-leve  { box-shadow: none; border-color: transparent; background: transparent;
+             text-decoration: underline; text-underline-offset: 4px; }
+.btn-icone { width: 48px; padding: 0; font-size: 24px; }
+
+/* Botão flutuante "+" */
+.fab {
+  position: fixed; right: var(--e4); bottom: calc(var(--safe-bottom) + var(--e6));
+  width: 64px; height: 64px; border-radius: 50%;
+  font-size: 34px; line-height: 1; font-family: var(--f-mono);
+  background: var(--rust); border: var(--contorno); box-shadow: var(--sombra);
+  z-index: 20;
+}
+
+/* CARD DE PROJETO — nível 1 (fechado) e nível 2 (aberto inline) */
+.card {
+  background: var(--papel); border: var(--contorno); border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  margin-bottom: var(--e6);
+}
+.card-cabeca {
+  display: block; width: 100%; text-align: left;
+  background: none; border: 0; padding: var(--e4);
+}
+.card-cabeca h3 { margin-bottom: var(--e2); }
+.card-resumo { color: var(--tinta-suave); margin: 0; }
+.card-meta { display: flex; flex-wrap: wrap; gap: var(--e2) var(--e4); margin-top: var(--e3); }
+.card-corpo { padding: 0 var(--e4) var(--e4); border-top: 2px dashed var(--faixa); }
+.card-corpo[hidden] { display: none; }
+.card-acoes { display: flex; justify-content: flex-end; margin-top: var(--e4); }
+.seta { display: inline-block; font-family: var(--f-mono); font-size: 22px; transition: transform .2s; }
+[aria-expanded="true"] .seta { transform: rotate(90deg); }
+
+/* Barra de progresso (steps concluídos ou dinheiro guardado) */
+.barra {
+  height: 12px; background: var(--faixa); border: var(--contorno); border-radius: 999px;
+  overflow: hidden; margin-top: var(--e2);
+}
+.barra > span { display: block; height: 100%; background: var(--rust); }
+.barra.mauve > span { background: var(--mauve); }
+
+/* ETIQUETA DE STATUS
+   Nunca só cor: cada status tem símbolo + palavra.
+   ▶ andamento   ‖ pausado   ✕ bloqueado   ✓ concluído */
+.status {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--f-mono); font-size: var(--t-rotulo); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  padding: 2px 10px; min-height: 30px;
+  border: var(--contorno); border-radius: 999px;
+  color: var(--tinta);
+}
+.status[data-s="andamento"] { background: var(--rust); }
+.status[data-s="pausado"]   { background: var(--mauve); }
+.status[data-s="bloqueado"] {
+  background: repeating-linear-gradient(-45deg, var(--papel) 0 6px, var(--faixa) 6px 12px);
+}
+.status[data-s="concluido"] { background: var(--tinta); color: var(--creme); }
+
+/* STEP — linha resumida, toca para ver o/onde/porquê */
+.step {
+  border: var(--contorno); border-radius: var(--raio); background: var(--papel);
+  margin-bottom: var(--e3);
+}
+.step[data-s="concluido"] .step-o-que { text-decoration: line-through; text-decoration-thickness: 2px;
+                                        color: var(--tinta-suave); }
+.step-linha {
+  display: flex; align-items: flex-start; gap: var(--e3);
+  width: 100%; text-align: left; background: none; border: 0; padding: var(--e3) var(--e4);
+}
+.step-o-que { flex: 1; font-weight: 700; }
+.step-linha .status { flex: none; }
+.step-detalhe { padding: 0 var(--e4) var(--e4); }
+.step-detalhe dl { margin: 0; display: grid; gap: var(--e3); }
+.step-detalhe dt {
+  font-family: var(--f-mono); font-size: var(--t-rotulo); letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--tinta-suave);
+}
+.step-detalhe dd { margin: 0; }
+.trava { color: var(--rust-texto); font-weight: 700; }
+
+/* Seletor de status: 4 botões grandes lado a lado */
+.seletor-status { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--e2); margin-top: var(--e4); }
+/* Não selecionado = papel liso (texto continua legível). Selecionado = cor + sombra. */
+.seletor-status .status { justify-content: center; min-height: 48px; cursor: pointer; }
+.seletor-status .status[aria-pressed="false"] { background: var(--papel); color: var(--tinta); }
+.seletor-status .status[aria-pressed="true"] { box-shadow: var(--sombra); }
+
+/* Dinheiro */
+.dinheiro { font-family: var(--f-mono); font-weight: 700; font-variant-numeric: tabular-nums; }
+.entrada { display: flex; justify-content: space-between; gap: var(--e3);
+           padding: var(--e3) 0; border-bottom: 1px solid var(--faixa); }
+.positivo { color: #2E6B3A; }        /* verde escuro: 5.9:1, e o sinal + / − também conta */
+.negativo { color: var(--rust-texto); }
+
+/* Tela cheia de projeto */
+.voltar { margin-bottom: var(--e4); }
+.bloco { margin-top: var(--e8); }
+
+/* ---------- 5. FORMULÁRIOS E FOLHA ------------------------------------- */
+.folha-fundo {
+  position: fixed; inset: 0; background: rgb(20 18 17 / .45); z-index: 50;
+  display: flex; align-items: flex-end;
+}
+.folha {
+  width: 100%; max-height: 92vh; overflow-y: auto;
+  background: var(--creme); border-top: var(--contorno);
+  border-radius: 16px 16px 0 0;
+  padding: var(--e6) var(--e4) calc(var(--safe-bottom) + var(--e6));
+}
+.folha h2 { margin-bottom: var(--e4); }
+
+.campo { display: block; margin-bottom: var(--e4); }
+.campo > span { display: block; margin-bottom: var(--e1); }
+.campo small { display: block; color: var(--tinta-suave); font-size: var(--t-peq); line-height: 1.5; }
+input, textarea, select {
+  width: 100%;
+  font-family: var(--f-texto);
+  font-size: var(--t-base);       /* ≥16px evita o zoom automático do iPhone */
+  line-height: 1.5;
+  padding: var(--e3);
+  background: var(--papel); color: var(--tinta);
+  border: var(--contorno); border-radius: var(--raio);
+}
+textarea { min-height: 88px; resize: vertical; }
+.linha-botoes { display: flex; gap: var(--e3); justify-content: flex-end; margin-top: var(--e6); flex-wrap: wrap; }
+
+.aviso {
+  position: fixed; left: var(--e4); right: var(--e4);
+  bottom: calc(var(--safe-bottom) + 100px); z-index: 60;
+  background: var(--tinta); color: var(--creme);
+  padding: var(--e3) var(--e4); border-radius: var(--raio);
+  font-family: var(--f-mono); font-size: var(--t-peq);
+}
