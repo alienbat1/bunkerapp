@@ -953,3 +953,49 @@ textarea {
   font-size: 12px;
   white-space: nowrap;
 }
+/* ---------- GRADE 2 COLUNAS PARA OS CARDS DO DASHBOARD ---------------- */
+.dash-cats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.dash-cats-grid .bunkr-box {
+  padding: 14px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.dash-cats-grid .box-topo {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.dash-cats-grid .cat-titulo {
+  font-size: 23px;
+  line-height: 1.1;
+}
+
+.dash-cats-grid .pill-status {
+  font-size: 9px;
+  padding: 2px 10px;
+}
+
+.dash-cats-grid .cat-progresso-linha {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.dash-cats-grid .cat-progresso-linha .barra {
+  order: 3;
+  width: 100%;
+  flex-basis: 100%;
+}
