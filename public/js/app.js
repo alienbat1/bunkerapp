@@ -1,8 +1,8 @@
 // =====================================================================
-// app.js — Dados + Gallery, Dashboard, Projetos, Calendar, Tasks + Criação
+// app.js — Dados + Gallery, Dashboard, Projetos, Calendar, Tasks + Arquivar/Deletar
 // =====================================================================
 
-const STORAGE_KEY = 'bunkr-data-v1';
+const STORAGE_KEY = 'bunkr-data-v2';
 
 const placeholderImg = (label, bg = '#DDD5C7', fg = '#5C514B') =>
   'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -17,7 +17,6 @@ const DEFAULT_DATA = {
   year: 2026,
   daysLeft: 42,
 
-  // Placeholders iniciais da Gallery (substituídos conforme você cria objetivos com foto)
   gallery: [
     { id: 1, tag: 'LEGENDA 1', size: 'normal', image: placeholderImg('FOTO 1', '#6E3538', '#FAF8F5'), categoryId: 'projetos' },
     { id: 2, tag: 'LEGENDA 2', size: 'tall',   image: placeholderImg('FOTO 2', '#C9B9A3', '#1A1514'), categoryId: 'estudo' },
@@ -33,11 +32,13 @@ const DEFAULT_DATA = {
     {
       id: 'projetos',
       name: 'Projetos',
+      archived: false,
       projects: [
         {
           id: 'site-do-tio',
           title: 'Site do Tio',
           summary: 'Construir o site do meu tio — professor de inglês e guia turístico.',
+          archived: false,
           steps: [
             { what: 'Enviar documento de planejamento pro tio', status: 'concluido', dueDate: '2026-11-10' },
             { what: 'Tio preencher o formulário', status: 'concluido', dueDate: '2026-11-14' },
@@ -51,11 +52,11 @@ const DEFAULT_DATA = {
         },
       ],
     },
-    { id: 'financeiro', name: 'Financeiro', projects: [] },
-    { id: 'habitos',    name: 'Hábitos',    projects: [] },
-    { id: 'carreira',   name: 'Carreira',   projects: [] },
-    { id: 'estudo',     name: 'Estudo',     projects: [] },
-    { id: 'hobbies',    name: 'Hobbies',    projects: [] },
+    { id: 'financeiro', name: 'Financeiro', archived: false, projects: [] },
+    { id: 'habitos',    name: 'Hábitos',    archived: false, projects: [] },
+    { id: 'carreira',   name: 'Carreira',   archived: false, projects: [] },
+    { id: 'estudo',     name: 'Estudo',     archived: false, projects: [] },
+    { id: 'hobbies',    name: 'Hobbies',    archived: false, projects: [] },
   ],
 };
 
@@ -114,6 +115,14 @@ function bar(pct) {
     h('span', { style: { width: `${safe}%` } }));
 }
 
+function activeCategories() {
+  return DATA.categories.filter((c) => !c.archived);
+}
+
+function activeProjects(cat) {
+  return (cat.projects || []).filter((p) => !p.archived);
+}
+
 function projectStats(p) {
   const total = p.steps.length;
   const done = p.steps.filter((s) => s.status === 'concluido').length;
@@ -122,15 +131,15 @@ function projectStats(p) {
 }
 
 function categoryStats(cat) {
-  const count = cat.projects.length;
+  const list = activeProjects(cat);
+  const count = list.length;
   if (!count) return { count: 0, pct: 0, statusLabel: 'NÃO INICIADO' };
-  const sumPct = cat.projects.reduce((acc, p) => acc + projectStats(p).pct, 0);
+  const sumPct = list.reduce((acc, p) => acc + projectStats(p).pct, 0);
   const pct = Math.round(sumPct / count);
   const statusLabel = pct >= 100 ? 'CONCLUÍDO' : pct > 0 ? 'INICIADO' : 'NÃO INICIADO';
   return { count, pct, statusLabel };
 }
 
-// Redimensiona a foto enviada para caber com folga no navegador
 function compressImage(file, maxWidth = 900) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -156,10 +165,11 @@ function compressImage(file, maxWidth = 900) {
 // NAVEGAÇÃO PRINCIPAL
 // ---------------------------------------------------------------------
 const NAV_TABS = [
-  { id: 'gallery',   label: 'GALLERY',   href: '#/gallery' },
-  { id: 'dashboard', label: 'DASHBOARD', href: '#/dashboard' },
-  { id: 'calendar',  label: 'CALENDAR',  href: '#/calendar' },
-  { id: 'tasks',     label: 'TASKS',     href: '#/tasks' },
+  { id: 'gallery',    label: 'GALLERY',    href: '#/gallery' },
+  { id: 'dashboard',  label: 'DASHBOARD',  href: '#/dashboard' },
+  { id: 'calendar',   label: 'CALENDAR',   href: '#/calendar' },
+  { id: 'tasks',      label: 'TASKS',      href: '#/tasks' },
+  { id: 'categorias', label: 'CATEGORIAS', href: '#/categorias' },
 ];
 
 function drawTopNav(activeTab) {
@@ -178,13 +188,13 @@ function drawTopNav(activeTab) {
 // BLOCOS REUTILIZÁVEIS
 // ---------------------------------------------------------------------
 function renderYearOverviewBox() {
-  const projCat = DATA.categories.find((c) => c.id === 'projetos');
-  const habCat  = DATA.categories.find((c) => c.id === 'habitos');
+  const visibleCats = activeCategories();
+  const habCat = visibleCats.find((c) => c.id === 'habitos');
+  const otherCats = visibleCats.filter((c) => c.id !== 'habitos');
 
-  const allNonHabits = DATA.categories.filter((c) => c.id !== 'habitos').flatMap((c) => c.projects);
-  const projPct = allNonHabits.length
-    ? Math.round(allNonHabits.reduce((a, p) => a + projectStats(p).pct, 0) / (DATA.categories.length - 1))
-    : categoryStats(projCat).pct;
+  const projPct = otherCats.length
+    ? Math.round(otherCats.reduce((a, c) => a + categoryStats(c).pct, 0) / otherCats.length)
+    : 0;
   const habPct = habCat ? categoryStats(habCat).pct : 0;
 
   return h('section', { class: 'bunkr-box' },
@@ -218,11 +228,17 @@ function renderCategorySummaryCard(cat) {
 }
 
 // ---------------------------------------------------------------------
-// FORMULÁRIO DE CRIAÇÃO (BOTÃO +)
+// FORMULÁRIOS DE CRIAÇÃO (BOTÃO +)
 // ---------------------------------------------------------------------
 function openCreateSheet(defaultCategoryId = 'projetos') {
-  let uploadedImageData = null;
+  const visibleCats = activeCategories();
+  if (!visibleCats.length) {
+    toast('Crie ou reative uma categoria primeiro');
+    location.hash = '#/categorias';
+    return;
+  }
 
+  let uploadedImageData = null;
   const preview = h('img', { class: 'preview-upload', alt: 'Prévia da foto' });
   const fileInput = h('input', {
     type: 'file',
@@ -257,20 +273,23 @@ function openCreateSheet(defaultCategoryId = 'projetos') {
           }))
         : [{ what: `Iniciar: ${title}`, status: 'andamento', dueDate }];
 
-      const cat = DATA.categories.find((c) => c.id === categoryId) || DATA.categories[0];
+      const cat = DATA.categories.find((c) => c.id === categoryId) || visibleCats[0];
+      const projectId = `proj-${Date.now()}`;
+
       cat.projects.push({
-        id: `proj-${Date.now()}`,
+        id: projectId,
         title,
         summary,
+        archived: false,
         steps,
       });
 
-      // Se enviou foto, adiciona na Gallery com o título/legenda do objetivo
       if (uploadedImageData) {
         const hasPlaceholders = DATA.gallery.some((g) => String(g.image).startsWith('data:image/svg+xml'));
         if (hasPlaceholders) DATA.gallery = [];
         DATA.gallery.unshift({
           id: Date.now(),
+          projectId,
           tag: title.toUpperCase(),
           size: gallerySize,
           image: uploadedImageData,
@@ -294,7 +313,7 @@ function openCreateSheet(defaultCategoryId = 'projetos') {
     h('label', { class: 'campo' },
       h('span', { class: 'rotulo' }, 'Categoria'),
       h('select', { name: 'categoryId' },
-        DATA.categories.map((c) =>
+        visibleCats.map((c) =>
           h('option', { value: c.id, selected: c.id === defaultCategoryId }, c.name)))),
 
     h('label', { class: 'campo' },
@@ -324,6 +343,40 @@ function openCreateSheet(defaultCategoryId = 'projetos') {
     h('div', { class: 'linha-botoes' },
       h('button', { type: 'button', class: 'btn btn-leve', onclick: () => backdrop.remove() }, 'Cancelar'),
       h('button', { type: 'submit', class: 'btn btn-forte' }, 'Salvar')));
+
+  const backdrop = h('div', {
+    class: 'folha-fundo',
+    onclick: (e) => { if (e.target === backdrop) backdrop.remove(); },
+  }, h('div', { class: 'folha' }, form));
+
+  document.body.append(backdrop);
+}
+
+function openNewCategorySheet() {
+  const form = h('form', {
+    onsubmit: (e) => {
+      e.preventDefault();
+      const name = new FormData(form).get('name').trim();
+      if (!name) return;
+      const slug = name.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `cat-${Date.now()}`;
+      const id = DATA.categories.some((c) => c.id === slug) ? `${slug}-${Date.now()}` : slug;
+
+      DATA.categories.push({ id, name, archived: false, projects: [] });
+      saveData();
+      backdrop.remove();
+      toast('Categoria criada');
+      router();
+    },
+  },
+    h('h2', {}, 'Nova categoria'),
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Nome'),
+      h('input', { type: 'text', name: 'name', required: true, placeholder: 'Ex: Relacionamentos' })),
+    h('div', { class: 'linha-botoes' },
+      h('button', { type: 'button', class: 'btn btn-leve', onclick: () => backdrop.remove() }, 'Cancelar'),
+      h('button', { type: 'submit', class: 'btn btn-forte' }, 'Criar')));
 
   const backdrop = h('div', {
     class: 'folha-fundo',
@@ -398,18 +451,21 @@ function viewDashboard() {
   render(
     h('div', { class: 'dash-wrap' },
       renderYearOverviewBox(),
-      DATA.categories.map((cat) => renderCategorySummaryCard(cat))));
+      activeCategories().map((cat) => renderCategorySummaryCard(cat))));
 }
 
-// TELA 3 — PROJETOS POR CATEGORIA
+// TELA 3 — PROJETOS POR CATEGORIA (com Arquivar e Deletar objetivos)
 function viewCategory(catId) {
   drawTopNav('dashboard');
-  const cat = DATA.categories.find((c) => c.id === catId) || DATA.categories[0];
+  const visibleCats = activeCategories();
+  const cat = DATA.categories.find((c) => c.id === catId) || visibleCats[0];
+  if (!cat) { location.hash = '#/categorias'; return; }
+
   const { count, pct, statusLabel } = categoryStats(cat);
   fab.onclick = () => openCreateSheet(cat.id);
 
   const subTabs = h('div', { class: 'sub-abas' },
-    DATA.categories.map((c) =>
+    visibleCats.map((c) =>
       h('a', {
         class: 'sub-aba',
         href: `#/c/${c.id}`,
@@ -423,56 +479,74 @@ function viewCategory(catId) {
     router();
   };
 
-  const projectCards = cat.projects.length
-    ? cat.projects.map((p) => {
-        const st = projectStats(p);
-        const stepsBox = h('div', { class: 'proj-steps' },
-          p.steps.map((s) =>
-            h('div', {
-              class: `step-row ${s.status}`,
-              style: { cursor: 'pointer' },
-              onclick: () => cycleStatus(s),
-            },
-              h('span', { class: 'step-texto' }, s.what),
-              h('span', { class: `step-badge ${s.status}` },
-                s.status === 'concluido' ? '✓ Concluído' : s.status === 'andamento' ? '▶ Andamento' : '‖ Pendente'))),
-          h('div', { class: 'proj-acoes' },
-            h('button', {
-              type: 'button',
-              class: 'btn btn-leve',
-              onclick: () => {
-                if (confirm(`Remover "${p.title}"?`)) {
-                  cat.projects = cat.projects.filter((item) => item.id !== p.id);
-                  saveData();
-                  router();
-                }
-              },
-            }, 'Remover'),
-            h('button', {
-              type: 'button',
-              class: 'btn',
-              onclick: () => openAddStepSheet(p),
-            }, '+ Step')));
+  const renderProjectCard = (p, isArchived = false) => {
+    const st = projectStats(p);
 
-        const head = h('button', {
-          type: 'button',
-          class: 'proj-cabeca',
-          'aria-expanded': 'true',
-          onclick: () => {
-            const open = head.getAttribute('aria-expanded') !== 'true';
-            head.setAttribute('aria-expanded', String(open));
-            stepsBox.hidden = !open;
-          },
+    const stepsBox = h('div', { class: 'proj-steps' },
+      p.steps.map((s) =>
+        h('div', {
+          class: `step-row ${s.status}`,
+          style: { cursor: 'pointer' },
+          onclick: () => cycleStatus(s),
         },
-          h('div', { class: 'proj-cabeca-topo' },
-            h('h3', { class: 'proj-titulo' }, p.title),
-            h('span', { class: 'rotulo' }, `${st.done}/${st.total} Steps (${st.pct}%)`)),
-          p.summary && h('p', { class: 'proj-resumo' }, p.summary),
-          bar(st.pct));
+          h('span', { class: 'step-texto' }, s.what),
+          h('span', { class: `step-badge ${s.status}` },
+            s.status === 'concluido' ? '✓ Concluído' : s.status === 'andamento' ? '▶ Andamento' : '‖ Pendente'))),
+      h('div', { class: 'proj-acoes' },
+        h('div', { class: 'grupo-acoes-esq' },
+          h('button', {
+            type: 'button',
+            class: 'btn btn-leve',
+            onclick: () => {
+              p.archived = !isArchived;
+              if (!isArchived) {
+                DATA.gallery = DATA.gallery.filter((g) => g.projectId !== p.id);
+              }
+              saveData();
+              toast(isArchived ? 'Objetivo restaurado' : 'Objetivo arquivado');
+              router();
+            },
+          }, isArchived ? 'Restaurar' : 'Arquivar'),
+          h('button', {
+            type: 'button',
+            class: 'btn btn-perigo',
+            onclick: () => {
+              if (confirm(`Deletar "${p.title}" permanentemente?`)) {
+                cat.projects = cat.projects.filter((item) => item.id !== p.id);
+                DATA.gallery = DATA.gallery.filter((g) => g.projectId !== p.id);
+                saveData();
+                toast('Objetivo deletado');
+                router();
+              }
+            },
+          }, 'Deletar')),
+        !isArchived && h('button', {
+          type: 'button',
+          class: 'btn',
+          onclick: () => openAddStepSheet(p),
+        }, '+ Step')));
 
-        return h('div', { class: 'proj-card' }, head, stepsBox);
-      })
-    : [h('div', { class: 'vazio' }, 'Nenhum projeto cadastrado aqui ainda. Toque em + para criar.')];
+    const head = h('button', {
+      type: 'button',
+      class: 'proj-cabeca',
+      'aria-expanded': 'true',
+      onclick: () => {
+        const open = head.getAttribute('aria-expanded') !== 'true';
+        head.setAttribute('aria-expanded', String(open));
+        stepsBox.hidden = !open;
+      },
+    },
+      h('div', { class: 'proj-cabeca-topo' },
+        h('h3', { class: 'proj-titulo' }, p.title),
+        h('span', { class: 'rotulo' }, `${st.done}/${st.total} Steps (${st.pct}%)`)),
+      p.summary && h('p', { class: 'proj-resumo' }, p.summary),
+      bar(st.pct));
+
+    return h('div', { class: `proj-card ${isArchived ? 'arquivado' : ''}` }, head, stepsBox);
+  };
+
+  const activeList = activeProjects(cat);
+  const archivedList = (cat.projects || []).filter((p) => p.archived);
 
   render(
     h('div', { class: 'dash-wrap' },
@@ -486,7 +560,14 @@ function viewCategory(catId) {
           h('span', { class: 'rotulo' }, `${count} ${count === 1 ? 'ITEM' : 'ITENS'}`),
           bar(pct),
           h('span', { class: 'pct-rust' }, `${pct}%`)),
-        projectCards)));
+        activeList.length
+          ? activeList.map((p) => renderProjectCard(p, false))
+          : h('div', { class: 'vazio' }, 'Nenhum objetivo ativo nesta categoria. Toque em + para criar.')),
+      archivedList.length > 0 && h('section', { class: 'bunkr-box' },
+        h('div', { class: 'box-topo' },
+          h('h3', { class: 'cat-titulo', style: { fontSize: '26px' } }, 'Arquivados'),
+          h('span', { class: 'pill-status' }, `${archivedList.length}`)),
+        archivedList.map((p) => renderProjectCard(p, true)))));
 }
 
 // TELA 4 — CALENDAR
@@ -495,8 +576,8 @@ function viewCalendar() {
   fab.onclick = () => openCreateSheet('projetos');
 
   const items = [];
-  for (const cat of DATA.categories) {
-    for (const p of cat.projects) {
+  for (const cat of activeCategories()) {
+    for (const p of activeProjects(cat)) {
       for (const s of p.steps) {
         if (s.dueDate) items.push({ ...s, project: p.title, category: cat.name });
       }
@@ -527,8 +608,8 @@ function viewTasks() {
   fab.onclick = () => openCreateSheet('projetos');
 
   const allSteps = [];
-  for (const cat of DATA.categories) {
-    for (const p of cat.projects) {
+  for (const cat of activeCategories()) {
+    for (const p of activeProjects(cat)) {
       for (const s of p.steps) {
         allSteps.push({ step: s, project: p.title, category: cat.name });
       }
@@ -562,6 +643,50 @@ function viewTasks() {
           : h('div', { class: 'vazio' }, 'Nenhuma tarefa cadastrada.'))));
 }
 
+// TELA 6 — GERENCIAR CATEGORIAS (Arquivar, Reativar, Deletar e Criar)
+function viewCategories() {
+  drawTopNav('categorias');
+  fab.onclick = () => openNewCategorySheet();
+
+  render(
+    h('div', { class: 'dash-wrap' },
+      h('section', { class: 'bunkr-box' },
+        h('div', { class: 'box-topo' },
+          h('h2', { class: 'cat-titulo' }, 'Categorias'),
+          h('button', { type: 'button', class: 'btn btn-forte', onclick: () => openNewCategorySheet() }, '+ Nova')),
+        h('div', { class: 'lista-simples' },
+          DATA.categories.map((cat) =>
+            h('div', { class: 'item-linha', style: cat.archived ? { opacity: '0.68' } : {} },
+              h('div', {},
+                h('strong', {}, cat.name, cat.archived ? ' (arquivada)' : ''),
+                h('div', { class: 'rotulo-suave', style: { marginTop: '4px' } },
+                  `${(cat.projects || []).length} ${(cat.projects || []).length === 1 ? 'objetivo' : 'objetivos'}`)),
+              h('div', { class: 'grupo-acoes-esq' },
+                h('button', {
+                  type: 'button',
+                  class: 'btn',
+                  onclick: () => {
+                    cat.archived = !cat.archived;
+                    saveData();
+                    toast(cat.archived ? 'Categoria arquivada' : 'Categoria reativada');
+                    router();
+                  },
+                }, cat.archived ? 'Reativar' : 'Arquivar'),
+                h('button', {
+                  type: 'button',
+                  class: 'btn btn-perigo',
+                  onclick: () => {
+                    if (confirm(`Deletar a categoria "${cat.name}" e todos os objetivos dentro dela?`)) {
+                      DATA.categories = DATA.categories.filter((c) => c.id !== cat.id);
+                      DATA.gallery = DATA.gallery.filter((g) => g.categoryId !== cat.id);
+                      saveData();
+                      toast('Categoria deletada');
+                      router();
+                    }
+                  },
+                }, 'Deletar'))))))));
+}
+
 // ---------------------------------------------------------------------
 // ROTEADOR
 // ---------------------------------------------------------------------
@@ -572,6 +697,7 @@ const routes = [
   [/^#\/c\/([\w-]+)$/, (id) => viewCategory(id)],
   [/^#\/calendar$/,    () => viewCalendar()],
   [/^#\/tasks$/,       () => viewTasks()],
+  [/^#\/categorias$/,  () => viewCategories()],
 ];
 
 function router() {
