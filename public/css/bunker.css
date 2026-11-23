@@ -1,5 +1,5 @@
 /* =====================================================================
-   BUNKR — estilos (Mobile-first App Shell: 440px max-width)
+   BUNKR — Minimalista, ADHD-Friendly, Gamificado + Gallery Fit-to-Screen
    ===================================================================== */
 
 :root {
@@ -7,14 +7,16 @@
   --bege-card:    #EFECE6;
   --papel:        #FFFDF9;
   --tinta:        #1A1514;
-  --tinta-suave:  #5C514B;
+  --tinta-suave:  #6E625C;
+  --borda-suave:  rgba(26, 21, 20, 0.16);
 
   --rust:         #C84B31;
   --rust-texto:   #A8371F;
+  --rust-suave:   #F7E7E3;
   --mauve-pill:   #E6BDC4;
   --mauve-sombra: #DFB5BE;
-  --mauve-cal:    #EED6DC;
-  --sage-cal:     #B0B8A8;
+  --mauve-cal:    #F2DCE1;
+  --sage-cal:     #B8C2B0;
   --header-cal:   #9E98A6;
 
   --verde-fundo:  #E4F4EC;
@@ -34,8 +36,6 @@
 
   --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e6: 24px;
 
-  --contorno: 1.5px solid var(--tinta);
-  --sombra-mauve: 4px 4px 0 var(--mauve-sombra);
   --raio-card: 18px;
   --raio-pill: 999px;
 
@@ -57,8 +57,8 @@ body {
   font-size: var(--t-base);
   line-height: var(--lh);
   letter-spacing: 0.01em;
-  border-left: 1px solid rgba(26, 21, 20, 0.1);
-  border-right: 1px solid rgba(26, 21, 20, 0.1);
+  border-left: 1px solid rgba(26, 21, 20, 0.08);
+  border-right: 1px solid rgba(26, 21, 20, 0.08);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -99,23 +99,25 @@ p { margin: 0 0 var(--e3); }
 button { font: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 
-/* ---------- TOPO & MENU PRINCIPAL FIXO (MOBILE APP) ------------------- */
+/* ---------- TOPO & MENU PRINCIPAL (4 ABAS LIMPAS, SEM ROLAGEM) -------- */
 .topo {
   position: sticky;
   top: 0;
   z-index: 20;
   background: var(--creme);
-  border-bottom: 1px solid rgba(26, 21, 20, 0.14);
+  border-bottom: 1px solid var(--borda-suave);
 }
 
 .topo-marca {
   background: var(--bege-card);
-  border-bottom: var(--contorno);
+  border-bottom: 1px solid var(--borda-suave);
   padding: calc(var(--safe-top) + 10px) var(--e4) 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .topo-marca .marca {
-  display: block;
   font-family: var(--f-titulo);
   font-style: italic;
   font-weight: 600;
@@ -124,30 +126,39 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.02em;
 }
 
-.abas {
-  display: flex;
+.xp-badge-topo {
+  display: inline-flex;
   align-items: center;
-  gap: 16px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding: 10px var(--e4);
-  background: var(--creme);
+  gap: 6px;
+  background: var(--papel);
+  border: 1px solid var(--borda-suave);
+  border-radius: var(--raio-pill);
+  padding: 3px 10px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--rust-texto);
 }
 
-.abas::-webkit-scrollbar { display: none; }
+.abas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  text-align: center;
+  padding: 10px 8px 0;
+  background: var(--creme);
+}
 
 .aba {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 3px 0;
+  padding: 4px 2px 10px;
   font-family: var(--f-mono);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 400;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
-  flex-shrink: 0;
   background: transparent;
   color: var(--tinta-suave);
   border: 0;
@@ -157,10 +168,10 @@ a { color: inherit; text-decoration: none; }
 .aba[aria-current="true"] {
   color: var(--rust-texto);
   font-weight: 700;
-  border-bottom-color: var(--rust-texto);
+  border-bottom-color: var(--rust);
 }
 
-/* ---------- SUB-MENUS DE JANELA (PÍLULAS COM CONTORNO) ---------------- */
+/* ---------- SUB-MENUS DE JANELA --------------------------------------- */
 .sub-abas {
   display: flex;
   gap: 6px;
@@ -172,23 +183,23 @@ a { color: inherit; text-decoration: none; }
 .sub-abas::-webkit-scrollbar { display: none; }
 
 .sub-aba {
-  padding: 6px 14px;
+  padding: 5px 13px;
   font-family: var(--f-mono);
-  font-size: 11px;
-  letter-spacing: 0.05em;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
   flex-shrink: 0;
   background: var(--papel);
   color: var(--tinta);
-  border: var(--contorno);
+  border: 1px solid var(--borda-suave);
   border-radius: var(--raio-pill);
 }
 
 .sub-aba[aria-current="true"] {
   background: var(--tinta);
   color: var(--mauve-pill);
-  border-color: var(--rust-texto);
+  border-color: var(--tinta);
   font-weight: 700;
 }
 
@@ -197,21 +208,28 @@ main {
   padding: var(--e3) var(--e3) calc(var(--safe-bottom) + 96px);
 }
 
-/* ---------- BOTÃO FLUTUANTE (+) PRESO AO APP -------------------------- */
+main.gallery-mode {
+  padding: 10px 10px calc(var(--safe-bottom) + 12px);
+  height: calc(100dvh - 86px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- BOTÃO FLUTUANTE (+) --------------------------------------- */
 .fab {
   position: fixed;
   right: max(16px, calc(50vw - (var(--app-width) / 2) + 16px));
   bottom: calc(var(--safe-bottom) + 18px);
-  width: 54px;
-  height: 54px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   font-family: var(--f-mono);
-  font-size: 28px;
+  font-size: 26px;
   line-height: 1;
   background: var(--rust);
   color: var(--papel);
-  border: var(--contorno);
-  box-shadow: 3px 3px 0 var(--tinta);
+  border: 1px solid rgba(26, 21, 20, 0.25);
+  box-shadow: 0 4px 12px rgba(200, 75, 49, 0.35);
   z-index: 30;
   display: inline-flex;
   align-items: center;
@@ -220,29 +238,28 @@ main {
 
 .fab[hidden] { display: none; }
 
-.fab:active {
-  transform: translate(2px, 2px);
-  box-shadow: none;
-}
+.fab:active { transform: scale(0.95); }
 
-/* ---------- GALLERY (GRID MOSAICO 2 COLUNAS MOBILE) ------------------- */
-.gallery-grid {
+/* ---------- GALLERY FIT-TO-SCREEN (TODAS AS FOTOS SEM ROLAR) ---------- */
+.gallery-fit-grid {
+  flex: 1;
+  width: 100%;
+  height: 100%;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: 175px;
-  gap: 10px;
+  gap: 8px;
+  min-height: 0;
 }
 
 .gallery-item {
   position: relative;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid rgba(26, 21, 20, 0.14);
+  border: 1px solid var(--borda-suave);
   background: var(--bege-card);
+  min-width: 0;
+  min-height: 0;
+  display: block;
 }
-
-.gallery-item.tall { grid-row: span 2; }
-.gallery-item.wide { grid-column: span 2; grid-row: span 2; }
 
 .gallery-item img {
   width: 100%;
@@ -253,37 +270,47 @@ main {
 
 .gallery-pill {
   position: absolute;
-  bottom: 10px;
+  bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--papel);
+  background: rgba(255, 253, 249, 0.94);
   color: var(--tinta);
-  border: var(--contorno);
+  border: 1px solid var(--borda-suave);
   border-radius: var(--raio-pill);
-  padding: 4px 14px;
+  padding: 3px 10px;
   font-family: var(--f-mono);
-  font-size: 10px;
-  letter-spacing: 0.05em;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
-  max-width: 88%;
+  max-width: 90%;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* ---------- DASHBOARD & CARDS BEGE COM SOMBRA MAUVE ------------------- */
+/* ---------- CARDS MINIMALISTAS & GAMIFICAÇÃO -------------------------- */
 .dash-wrap {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.bunkr-box {
+/* Card principal do topo (com destaque suave) */
+.bunkr-hero {
   background: var(--bege-card);
-  border: var(--contorno);
+  border: 1px solid var(--borda-suave);
   border-radius: var(--raio-card);
-  box-shadow: var(--sombra-mauve);
+  box-shadow: 4px 4px 0 var(--mauve-sombra);
   padding: 16px 18px;
+}
+
+/* Cards internos leves (sem sombra pesada) */
+.bunkr-box {
+  background: var(--papel);
+  border: 1px solid var(--borda-suave);
+  border-radius: var(--raio-card);
+  padding: 15px 16px;
 }
 
 .box-topo {
@@ -291,31 +318,15 @@ main {
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 }
 
-.visao-linha {
-  display: grid;
-  grid-template-columns: 88px minmax(0, 1fr) 40px;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.visao-linha:last-child { margin-bottom: 0; }
-
 .cat-titulo {
   font-family: var(--f-titulo);
-  font-size: 26px;
+  font-size: 25px;
   font-weight: 600;
   color: var(--tinta);
-}
-
-.cat-progresso-linha {
-  display: grid;
-  grid-template-columns: 68px minmax(0, 1fr) 40px;
-  align-items: center;
-  gap: 10px;
 }
 
 .pill-status {
@@ -324,11 +335,11 @@ main {
   justify-content: center;
   background: var(--mauve-pill);
   color: var(--tinta);
-  border: var(--contorno);
   border-radius: var(--raio-pill);
-  padding: 3px 12px;
+  padding: 3px 10px;
   font-family: var(--f-mono);
-  font-size: 10px;
+  font-size: 9.5px;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -344,13 +355,13 @@ main {
   color: var(--verm-texto);
 }
 
-/* Barra de progresso */
+/* Barra de progresso fina e limpa */
 .barra {
-  height: 9px;
-  background: var(--papel);
-  border: var(--contorno);
+  height: 7px;
+  background: var(--bege-card);
   border-radius: var(--raio-pill);
   overflow: hidden;
+  width: 100%;
 }
 
 .barra > span {
@@ -358,14 +369,202 @@ main {
   height: 100%;
   background: var(--rust);
   border-radius: var(--raio-pill);
-  transition: width .25s ease;
+  transition: width .3s ease;
 }
 
-/* ---------- CALENDÁRIO MENSAL (7 COLUNAS TRAVADAS PARA CELULAR) ------- */
-.cal-wrap {
+/* ---------- GRADE 2 COLUNAS DO DASHBOARD (CHALLENGES POR CATEGORIA) --- */
+.dash-cats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cat-challenge-card {
+  background: var(--papel);
+  border: 1px solid var(--borda-suave);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  transition: transform .12s, border-color .12s;
+}
+
+.cat-challenge-card:active {
+  transform: scale(0.98);
+}
+
+.cat-challenge-card.done {
+  background: var(--verde-fundo);
+  border-color: var(--verde-borda);
+}
+
+.cat-challenge-title {
+  font-family: var(--f-titulo);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.cat-mission-hint {
+  font-size: 12px;
+  color: var(--rust-texto);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Missão de Hoje (Foco ADHD no Dashboard) */
+.daily-quest-card {
+  background: var(--rust-suave);
+  border: 1px solid rgba(200, 75, 49, 0.3);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.link-discreto {
+  display: block;
+  text-align: right;
+  font-family: var(--f-titulo);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--tinta-suave);
+  padding: 4px 2px;
+}
+
+/* ---------- PROJETOS & CHALLENGES DE CADA OBJETIVO -------------------- */
+.proj-card {
+  background: var(--papel);
+  border: 1px solid var(--borda-suave);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+
+.proj-card.arquivado {
+  opacity: 0.65;
+  background: var(--bege-card);
+}
+
+.proj-cabeca {
   width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
 }
 
+.proj-cabeca-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.proj-titulo {
+  font-family: var(--f-titulo);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.proj-resumo {
+  color: var(--tinta-suave);
+  font-size: 13.5px;
+  margin-bottom: 8px;
+}
+
+.proj-next-step {
+  font-size: 12.5px;
+  color: var(--rust-texto);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.proj-fin-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--verde-fundo);
+  color: var(--verde-texto);
+  border-radius: var(--raio-pill);
+  padding: 3px 10px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  margin-bottom: 8px;
+}
+
+.proj-steps {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--borda-suave);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.proj-steps[hidden] { display: none; }
+
+.step-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13.5px;
+  padding: 9px 12px;
+  background: var(--bege-card);
+  border-radius: 10px;
+}
+
+.step-row.concluido .step-texto {
+  text-decoration: line-through;
+  color: var(--tinta-suave);
+}
+
+.step-badge {
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: var(--raio-pill);
+  background: var(--papel);
+  flex-shrink: 0;
+}
+
+.step-badge.concluido {
+  background: var(--tinta);
+  color: var(--creme);
+}
+
+.step-badge.andamento {
+  background: var(--mauve-pill);
+  font-weight: 700;
+}
+
+.proj-acoes {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.grupo-acoes-esq {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- CALENDÁRIO MENSAL (7 COLUNAS TRAVADAS) + DIA -------------- */
 .cal-header {
   display: flex;
   align-items: center;
@@ -376,7 +575,7 @@ main {
 
 .cal-mes-titulo {
   font-family: var(--f-titulo);
-  font-size: 26px;
+  font-size: 25px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -384,12 +583,12 @@ main {
 
 .cal-nav-btn {
   background: var(--papel);
-  border: var(--contorno);
+  border: 1px solid var(--borda-suave);
   border-radius: var(--raio-pill);
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   font-family: var(--f-mono);
-  font-size: 15px;
+  font-size: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -411,10 +610,8 @@ main {
   text-transform: uppercase;
 }
 
-/* Abreviação automática no mobile para não estourar os 7 dias */
 .cal-weekdays > div {
   overflow: hidden;
-  text-overflow: clip;
   max-width: 3ch;
   margin: 0 auto;
 }
@@ -428,20 +625,16 @@ main {
 .cal-cell {
   min-width: 0;
   width: 100%;
-  min-height: 68px;
+  min-height: 66px;
   background: var(--papel);
-  border: 1.5px solid var(--mauve-sombra);
+  border: 1px solid var(--mauve-sombra);
   border-radius: 8px;
-  padding: 4px 4px;
+  padding: 4px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   text-align: left;
   overflow: hidden;
-}
-
-.cal-cell:active {
-  transform: scale(0.97);
 }
 
 .cal-cell.vazio {
@@ -500,328 +693,144 @@ main {
   color: var(--tinta);
 }
 
-/* ---------- TELA DE PROJETOS ------------------------------------------ */
-.proj-card {
-  background: var(--papel);
-  border: var(--contorno);
-  border-radius: 14px;
-  padding: 14px 16px;
-  margin-top: 12px;
-}
-
-.proj-card.arquivado {
-  opacity: 0.72;
-  background: var(--creme);
-}
-
-.proj-cabeca {
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: 0;
-  padding: 0;
-}
-
-.proj-cabeca-topo {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.proj-titulo {
-  font-family: var(--f-titulo);
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.proj-resumo {
-  color: var(--tinta-suave);
-  font-size: var(--t-peq);
-  margin-bottom: 8px;
-}
-
-.proj-fin-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--verde-fundo);
-  color: var(--verde-texto);
-  border: 1px solid var(--verde-borda);
-  border-radius: var(--raio-pill);
-  padding: 3px 10px;
-  font-family: var(--f-mono);
-  font-size: 10px;
-  margin-bottom: 8px;
-}
-
-.proj-steps {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--tinta-suave);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.proj-steps[hidden] { display: none; }
-
-.step-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: var(--t-peq);
-  padding: 8px 10px;
-  background: var(--bege-card);
-  border: 1px solid var(--tinta);
-  border-radius: 10px;
-}
-
-.step-row.concluido .step-texto {
-  text-decoration: line-through;
-  color: var(--tinta-suave);
-}
-
-.step-badge {
-  font-family: var(--f-mono);
-  font-size: 9.5px;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border: 1px solid var(--tinta);
-  border-radius: var(--raio-pill);
-  background: var(--papel);
-  flex-shrink: 0;
-}
-
-.step-badge.concluido {
-  background: var(--tinta);
-  color: var(--creme);
-}
-
-.step-badge.andamento {
-  background: var(--mauve-pill);
-}
-
-.proj-acoes {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-
-.grupo-acoes-esq {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* ---------- FINANCEIRO ------------------------------------------------ */
+/* ---------- FINANCEIRO (MINIMALISTA + COMPACTO) ----------------------- */
 .fin-alerta {
-  border: var(--contorno);
   border-radius: 14px;
   padding: 12px 14px;
-  font-size: var(--t-peq);
+  font-size: 13.5px;
   font-weight: 700;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.fin-alerta.pos {
-  background: var(--verde-fundo);
-  color: var(--verde-texto);
-}
+.fin-alerta.pos { background: var(--verde-fundo); color: var(--verde-texto); }
+.fin-alerta.neg { background: var(--verm-fundo); color: var(--verm-texto); }
 
-.fin-alerta.neg {
-  background: var(--verm-fundo);
-  color: var(--verm-texto);
-}
-
-.fin-botoes {
-  display: flex;
-  gap: 8px;
-}
-
-.fin-botoes .btn {
-  flex: 1;
-  padding: 0 10px;
-  font-size: 11px;
-}
+.fin-botoes { display: flex; gap: 8px; }
+.fin-botoes .btn { flex: 1; padding: 0 10px; font-size: 10.5px; }
 
 .fin-linha {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(26, 21, 20, 0.14);
+  border-bottom: 1px solid rgba(26, 21, 20, 0.08);
 }
 
 .fin-linha:last-child { border-bottom: 0; }
+.fin-linha.saldo { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--borda-suave); border-bottom: 0; font-weight: 700; }
 
-.fin-linha.saldo {
-  margin-top: 4px;
-  padding-top: 10px;
-  border-top: var(--contorno);
-  border-bottom: 0;
-  font-weight: 700;
-}
-
-.fin-valor {
-  font-family: var(--f-mono);
-  font-size: 14px;
-  font-weight: 700;
-}
-
+.fin-valor { font-family: var(--f-mono); font-size: 14px; font-weight: 700; }
 .fin-valor.pos { color: var(--verde-texto); }
 .fin-valor.neg { color: var(--verm-texto); }
 
 .analise-box {
-  background: var(--papel);
-  border: var(--contorno);
+  background: var(--bege-card);
   border-radius: 12px;
   padding: 12px 14px;
-  font-size: var(--t-peq);
+  font-size: 13.5px;
   white-space: pre-wrap;
   line-height: 1.55;
 }
 
 .breakdown-row {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) 56px;
+  grid-template-columns: 92px minmax(0, 1fr) 54px;
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
 }
 
-.breakdown-row:last-child { margin-bottom: 0; }
+.compact-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
 
 .goal-card {
-  background: var(--papel);
-  border: var(--contorno);
+  background: var(--bege-card);
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
 }
 
-.goal-card.bloqueado {
-  opacity: 0.62;
-  background: var(--bege-card);
-}
+.goal-card.bloqueado { opacity: 0.6; }
 
 .goal-edit-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   margin-top: 10px;
   flex-wrap: wrap;
 }
 
 .goal-edit-row input {
-  max-width: 110px;
-  padding: 5px 10px;
+  width: 100%;
+  padding: 5px 8px;
   font-family: var(--f-mono);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .corte-card {
-  background: var(--papel);
-  border: var(--contorno);
+  background: var(--bege-card);
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 14px;
 }
 
 .corte-card.comprometido {
-  border-left: 5px solid var(--verde-borda);
+  background: var(--papel);
+  border: 1px solid var(--borda-suave);
+  border-left: 4px solid var(--verde-borda);
 }
 
-.corte-destino {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  color: var(--tinta-suave);
-  margin: 8px 0 10px;
-}
-
-.corte-rodape {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  color: var(--verde-texto);
-  font-weight: 700;
-  margin-top: 6px;
-}
+.corte-destino { font-family: var(--f-mono); font-size: 11px; color: var(--tinta-suave); margin: 8px 0 10px; }
+.corte-rodape { font-family: var(--f-mono); font-size: 11px; color: var(--verde-texto); font-weight: 700; margin-top: 6px; }
 
 .hist-card {
-  background: var(--papel);
-  border: var(--contorno);
+  background: var(--bege-card);
   border-radius: 14px;
-  padding: 12px 14px;
+  padding: 12px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
-.hist-dados {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  color: var(--tinta-suave);
-}
+.hist-dados { font-family: var(--f-mono); font-size: 10.5px; color: var(--tinta-suave); line-height: 1.45; }
 
-/* ---------- BOTÕES, FORMULÁRIO & FOLHA (BOTTOM SHEET MOBILE) ---------- */
+/* ---------- BOTÕES, FORMULÁRIO & FOLHA -------------------------------- */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 36px;
+  min-height: 34px;
   padding: 0 14px;
   font-family: var(--f-mono);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   background: var(--papel);
   color: var(--tinta);
-  border: var(--contorno);
+  border: 1px solid var(--borda-suave);
   border-radius: var(--raio-pill);
 }
 
-.btn-forte {
-  background: var(--rust);
-  color: var(--papel);
-}
-
-.btn-verde {
-  background: var(--verde-fundo);
-  color: var(--verde-texto);
-}
-
-.btn-perigo {
-  background: transparent;
-  border-color: transparent;
-  color: var(--rust-texto);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  padding: 0 4px;
-}
-
-.btn-leve {
-  background: transparent;
-  border-color: transparent;
-  color: var(--tinta-suave);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  padding: 0 4px;
-}
+.btn-forte { background: var(--rust); color: var(--papel); border-color: var(--rust); }
+.btn-verde { background: var(--verde-fundo); color: var(--verde-texto); border-color: var(--verde-borda); }
+.btn-perigo { background: transparent; border-color: transparent; color: var(--rust-texto); text-decoration: underline; padding: 0 4px; }
+.btn-leve { background: transparent; border-color: transparent; color: var(--tinta-suave); text-decoration: underline; padding: 0 4px; }
 
 .folha-fundo {
   position: fixed;
   inset: 0;
-  background: rgba(26, 21, 20, 0.5);
+  background: rgba(26, 21, 20, 0.45);
   z-index: 50;
   display: flex;
   align-items: flex-end;
@@ -834,27 +843,14 @@ main {
   max-height: 90vh;
   overflow-y: auto;
   background: var(--creme);
-  border-top: var(--contorno);
-  border-left: var(--contorno);
-  border-right: var(--contorno);
+  border-top: 1px solid var(--borda-suave);
   border-radius: 20px 20px 0 0;
   padding: 20px 16px calc(var(--safe-bottom) + 24px);
 }
 
-.folha h2 {
-  font-size: 26px;
-  margin-bottom: 14px;
-}
-
-.campo {
-  display: block;
-  margin-bottom: 14px;
-}
-
-.campo > span {
-  display: block;
-  margin-bottom: 5px;
-}
+.folha h2 { font-size: 25px; margin-bottom: 14px; }
+.campo { display: block; margin-bottom: 14px; }
+.campo > span { display: block; margin-bottom: 5px; }
 
 input[type="text"],
 input[type="number"],
@@ -867,7 +863,7 @@ select {
   padding: 9px 12px;
   background: var(--papel);
   color: var(--tinta);
-  border: var(--contorno);
+  border: 1px solid var(--borda-suave);
   border-radius: 12px;
 }
 
@@ -877,199 +873,30 @@ input[type="file"] {
   font-size: 12px;
   padding: 8px;
   background: var(--papel);
-  border: 1.5px dashed var(--tinta);
+  border: 1px dashed var(--borda-suave);
   border-radius: 12px;
 }
 
-textarea {
-  min-height: 88px;
-  resize: vertical;
-}
+textarea { min-height: 84px; resize: vertical; }
+.preview-upload { margin-top: 8px; width: 100%; max-height: 150px; object-fit: cover; border-radius: 12px; display: none; }
+.linha-botoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.edit-step-item { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
 
-.preview-upload {
-  margin-top: 8px;
-  width: 100%;
-  max-height: 160px;
-  object-fit: cover;
-  border-radius: 12px;
-  border: var(--contorno);
-  display: none;
-}
-
-.linha-botoes {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.edit-step-item {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-/* ---------- LISTAS & AVISOS ------------------------------------------- */
-.lista-simples {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.item-linha {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  background: var(--papel);
-  border: var(--contorno);
-  border-radius: 12px;
-  flex-wrap: wrap;
-}
-
-.vazio {
-  padding: 20px;
-  text-align: center;
-  border: 1.5px dashed var(--tinta-suave);
-  border-radius: 14px;
-  color: var(--tinta-suave);
-  margin-top: 10px;
-  font-size: var(--t-peq);
-}
+.lista-simples { display: flex; flex-direction: column; gap: 10px; }
+.item-linha { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px; background: var(--bege-card); border-radius: 12px; flex-wrap: wrap; }
+.vazio { padding: 18px; text-align: center; border: 1px dashed var(--borda-suave); border-radius: 14px; color: var(--tinta-suave); margin-top: 8px; font-size: 13.5px; }
 
 .aviso {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(var(--safe-bottom) + 84px);
+  bottom: calc(var(--safe-bottom) + 82px);
   z-index: 60;
   background: var(--tinta);
   color: var(--creme);
   padding: 8px 16px;
   border-radius: var(--raio-pill);
   font-family: var(--f-mono);
-  font-size: 12px;
+  font-size: 11.5px;
   white-space: nowrap;
-}
-/* ---------- GRADE 2 COLUNAS PARA OS CARDS DO DASHBOARD ---------------- */
-.dash-cats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 8px;
-}
-
-.dash-cats-grid .bunkr-box {
-  padding: 14px 14px 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-width: 0;
-}
-
-.dash-cats-grid .box-topo {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-.dash-cats-grid .cat-titulo {
-  font-size: 23px;
-  line-height: 1.1;
-}
-
-.dash-cats-grid .pill-status {
-  font-size: 9px;
-  padding: 2px 10px;
-}
-
-.dash-cats-grid .cat-progresso-linha {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 6px;
-}
-
-.dash-cats-grid .cat-progresso-linha .barra {
-  order: 3;
-  width: 100%;
-  flex-basis: 100%;
-}
-/* ---------- GRADE COMPACTA 2 COLUNAS (TASKS, FINANCEIRO, CATEGORIAS) ---- */
-.compact-grid-2 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-/* Tasks em 2 colunas */
-.compact-grid-2 .step-row {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px;
-  min-width: 0;
-}
-
-.compact-grid-2 .step-texto {
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-/* Categorias em 2 colunas */
-.compact-grid-2 .item-linha {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px;
-  min-width: 0;
-}
-
-/* Histórico do Financeiro em 2 colunas */
-.compact-grid-2 .hist-card {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px;
-  min-width: 0;
-}
-
-.compact-grid-2 .hist-dados {
-  font-size: 10px;
-  line-height: 1.45;
-}
-
-/* Goals do Financeiro em 2 colunas */
-.compact-grid-2 .goal-card {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-width: 0;
-}
-
-.compact-grid-2 .goal-card .box-topo {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-}
-
-.compact-grid-2 .goal-card .proj-titulo {
-  font-size: 19px;
-}
-
-.compact-grid-2 .goal-edit-row input {
-  max-width: 100%;
-}
-
-/* Cards de box externos mais compactos em Tasks, Financeiro e Categorias */
-.bunkr-box.compact-box {
-  padding: 14px 14px;
 }
