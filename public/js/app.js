@@ -1132,68 +1132,64 @@ function renderFinanceiroGoals() {
   const investUnlocked = g.reservaCurrent >= g.reservaTarget;
 
   return [
-    h('section', { class: 'bunkr-box' },
+    h('section', { class: 'bunkr-box compact-box' },
       h('div', { class: 'box-topo' },
-        h('h2', { class: 'cat-titulo' }, 'Goals financeiros'),
+        h('h2', { class: 'cat-titulo' }, 'Goals'),
         h('span', { class: 'pill-status' }, '3 METAS')),
 
-      h('div', { class: 'lista-simples' },
-        // 1. Acting Classes (conectado ao projeto Acting Classes)
+      h('div', { class: 'compact-grid-2' },
+        // 1. Acting Classes
         h('div', { class: 'goal-card' },
-          h('div', { class: 'box-topo', style: { marginBottom: '10px' } },
+          h('div', { class: 'box-topo', style: { marginBottom: '8px' } },
             h('h3', { class: 'proj-titulo' }, 'Acting Classes'),
             h('span', { class: `pill-status ${actingPct >= 100 ? 'pos' : ''}` }, `${actingPct}%`)),
           bar(actingPct),
-          h('div', { class: 'box-topo', style: { marginTop: '10px', marginBottom: '0' } },
-            h('span', { class: 'rotulo-suave' }, `${fmtUSD(g.actingCurrent)} / ${fmtUSD(g.actingTarget)}`),
-            h('span', { class: 'rotulo-suave' }, `Meta: ${fmtUSD(g.actingTarget)}`)),
+          h('div', { class: 'rotulo-suave', style: { marginTop: '8px', fontSize: '10px' } },
+            `${fmtUSD(g.actingCurrent)} / ${fmtUSD(g.actingTarget)}`),
           h('div', { class: 'goal-edit-row' },
-            h('div', { class: 'grupo-acoes-esq' },
-              h('span', { class: 'rotulo-suave' }, 'Valor atual ($):'),
-              h('input', {
-                type: 'number',
-                step: 'any',
-                value: g.actingCurrent,
-                onchange: (e) => {
-                  g.actingCurrent = Math.max(0, Number(e.target.value) || 0);
-                  saveData();
-                  toast('Acting Classes atualizado');
-                  router();
-                },
-              })),
-            h('a', { class: 'btn', href: '#/c/projetos' }, 'Ver projeto →'))),
+            h('input', {
+              type: 'number',
+              step: 'any',
+              value: g.actingCurrent,
+              'aria-label': 'Valor atual Acting Classes',
+              onchange: (e) => {
+                g.actingCurrent = Math.max(0, Number(e.target.value) || 0);
+                saveData();
+                toast('Acting Classes atualizado');
+                router();
+              },
+            }),
+            h('a', { class: 'btn', style: { minHeight: '30px', padding: '0 10px', fontSize: '10px' }, href: '#/c/projetos' }, 'Projeto →'))),
 
         // 2. Reserva de Emergência
         h('div', { class: 'goal-card' },
-          h('div', { class: 'box-topo', style: { marginBottom: '10px' } },
-            h('h3', { class: 'proj-titulo' }, 'Reserva de Emergência'),
+          h('div', { class: 'box-topo', style: { marginBottom: '8px' } },
+            h('h3', { class: 'proj-titulo' }, 'Reserva'),
             h('span', { class: `pill-status ${reservaPct >= 100 ? 'pos' : ''}` }, `${reservaPct}%`)),
           bar(reservaPct),
-          h('div', { class: 'box-topo', style: { marginTop: '10px', marginBottom: '0' } },
-            h('span', { class: 'rotulo-suave' }, `${fmtUSD(g.reservaCurrent)} / ${fmtUSD(g.reservaTarget)} (saldo inicial da conta)`),
-            h('span', { class: 'rotulo-suave' }, `Meta: ${fmtUSD(g.reservaTarget)}`)),
+          h('div', { class: 'rotulo-suave', style: { marginTop: '8px', fontSize: '10px' } },
+            `${fmtUSD(g.reservaCurrent)} / ${fmtUSD(g.reservaTarget)}`),
           h('div', { class: 'goal-edit-row' },
-            h('div', { class: 'grupo-acoes-esq' },
-              h('span', { class: 'rotulo-suave' }, 'Valor atual ($):'),
-              h('input', {
-                type: 'number',
-                step: 'any',
-                value: g.reservaCurrent,
-                onchange: (e) => {
-                  g.reservaCurrent = Math.max(0, Number(e.target.value) || 0);
-                  saveData();
-                  toast('Reserva atualizada');
-                  router();
-                },
-              })))),
+            h('input', {
+              type: 'number',
+              step: 'any',
+              value: g.reservaCurrent,
+              'aria-label': 'Valor atual Reserva',
+              onchange: (e) => {
+                g.reservaCurrent = Math.max(0, Number(e.target.value) || 0);
+                saveData();
+                toast('Reserva atualizada');
+                router();
+              },
+            }))),
 
         // 3. Investimento (bloqueado)
-        h('div', { class: `goal-card ${investUnlocked ? '' : 'bloqueado'}` },
-          h('div', { class: 'box-topo', style: { marginBottom: '10px' } },
+        h('div', { class: `goal-card ${investUnlocked ? '' : 'bloqueado'}`, style: { gridColumn: 'span 2' } },
+          h('div', { class: 'box-topo', style: { marginBottom: '8px', flexDirection: 'row', alignItems: 'center' } },
             h('h3', { class: 'proj-titulo' }, `${investUnlocked ? '📈' : '🔒'} Investimento`),
             h('span', { class: 'pill-status' }, investUnlocked ? 'DESBLOQUEADO' : 'BLOQUEADO')),
           bar(0),
-          h('p', { class: 'rotulo-suave', style: { marginTop: '10px', marginBottom: '0' } },
+          h('p', { class: 'rotulo-suave', style: { marginTop: '8px', marginBottom: '0', fontSize: '10px' } },
             investUnlocked
               ? 'Reserva atingiu $3.000! Você já pode começar a investir.'
               : 'Disponível quando a Reserva atingir $3.000')))),
@@ -1264,20 +1260,20 @@ function renderFinanceiroCortes() {
 function renderFinanceiroHistorico() {
   const list = DATA.financeiro.history;
   return [
-    h('section', { class: 'bunkr-box' },
+    h('section', { class: 'bunkr-box compact-box' },
       h('div', { class: 'box-topo' },
         h('h2', { class: 'cat-titulo' }, 'Histórico'),
-        h('span', { class: 'pill-status' }, `ÚLTIMOS ${list.length} PERÍODOS`)),
-      h('div', { class: 'lista-simples' },
+        h('span', { class: 'pill-status' }, `${list.length} PERÍODOS`)),
+      h('div', { class: 'compact-grid-2' },
         list.map((item) => {
           const isPos = item.balance >= 0;
           return h('div', { class: 'hist-card' },
-            h('div', {},
-              h('strong', { style: { fontFamily: 'var(--f-titulo)', fontSize: '22px' } }, item.period),
-              h('div', { class: 'hist-dados', style: { marginTop: '4px' } },
-                `Receita ${fmtUSD(item.income)} · Gastos ${fmtUSD(item.expenses)} · Saldo ${fmtSignedUSD(item.balance)}`)),
-            h('span', { class: `pill-status ${isPos ? 'pos' : 'neg'}` },
-              isPos ? '✓ Positivo' : '✗ Negativo'));
+            h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' } },
+              h('strong', { style: { fontFamily: 'var(--f-titulo)', fontSize: '20px' } }, item.period),
+              h('span', { class: `pill-status ${isPos ? 'pos' : 'neg'}`, style: { fontSize: '9px', padding: '2px 8px' } },
+                isPos ? '✓ +' : '✗ -')),
+            h('div', { class: 'hist-dados' },
+              `Rec: ${fmtUSD(item.income)}\nGas: ${fmtUSD(item.expenses)}\nSal: ${fmtSignedUSD(item.balance)}`));
         }))),
   ];
 }
@@ -1457,12 +1453,12 @@ function viewTasks() {
 
   render(
     h('div', { class: 'dash-wrap' },
-      h('section', { class: 'bunkr-box' },
+      h('section', { class: 'bunkr-box compact-box' },
         h('div', { class: 'box-topo' },
           h('h2', { class: 'cat-titulo' }, 'Tasks'),
           h('span', { class: 'pill-status' }, `${allSteps.length} STEPS`)),
         allSteps.length
-          ? h('div', { class: 'lista-simples' },
+          ? h('div', { class: 'compact-grid-2' },
               allSteps.map(({ step, project, category }) =>
                 h('div', {
                   class: `step-row ${step.status}`,
@@ -1476,7 +1472,7 @@ function viewTasks() {
                 },
                   h('div', {},
                     h('div', { class: 'step-texto' }, step.what),
-                    h('span', { class: 'rotulo-suave' }, `${category} · ${project}`)),
+                    h('span', { class: 'rotulo-suave', style: { fontSize: '9.5px', display: 'block', marginTop: '4px' } }, `${category} · ${project}`)),
                   h('span', { class: `step-badge ${step.status}` },
                     step.status === 'concluido' ? '✓ Concluído' : step.status === 'andamento' ? '▶ Andamento' : '‖ Pendente'))))
           : h('div', { class: 'vazio' }, 'Nenhuma tarefa cadastrada.'))));
@@ -1489,21 +1485,22 @@ function viewCategories() {
 
   render(
     h('div', { class: 'dash-wrap' },
-      h('section', { class: 'bunkr-box' },
+      h('section', { class: 'bunkr-box compact-box' },
         h('div', { class: 'box-topo' },
           h('h2', { class: 'cat-titulo' }, 'Categorias'),
           h('button', { type: 'button', class: 'btn btn-forte', onclick: () => openNewCategorySheet() }, '+ Nova')),
-        h('div', { class: 'lista-simples' },
+        h('div', { class: 'compact-grid-2' },
           DATA.categories.map((cat) =>
             h('div', { class: 'item-linha', style: cat.archived ? { opacity: '0.68' } : {} },
               h('div', {},
-                h('strong', {}, cat.name, cat.archived ? ' (arquivada)' : ''),
-                h('div', { class: 'rotulo-suave', style: { marginTop: '4px' } },
+                h('strong', { style: { fontFamily: 'var(--f-titulo)', fontSize: '20px' } }, cat.name, cat.archived ? ' (arq.)' : ''),
+                h('div', { class: 'rotulo-suave', style: { marginTop: '4px', fontSize: '10px' } },
                   `${(cat.projects || []).length} ${(cat.projects || []).length === 1 ? 'objetivo' : 'objetivos'}`)),
               h('div', { class: 'grupo-acoes-esq' },
                 h('button', {
                   type: 'button',
                   class: 'btn',
+                  style: { minHeight: '30px', padding: '0 10px', fontSize: '10px' },
                   onclick: () => {
                     cat.archived = !cat.archived;
                     saveData();
@@ -1514,6 +1511,7 @@ function viewCategories() {
                 h('button', {
                   type: 'button',
                   class: 'btn btn-perigo',
+                  style: { fontSize: '10px' },
                   onclick: () => {
                     if (confirm(`Deletar a categoria "${cat.name}" e todos os objetivos dentro dela?`)) {
                       DATA.categories = DATA.categories.filter((c) => c.id !== cat.id);
