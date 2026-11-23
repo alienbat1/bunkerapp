@@ -1,8 +1,8 @@
 // =====================================================================
-// app.js — Dados + Gallery, Dashboard, Projetos, Calendar, Tasks + Arquivar/Deletar
+// app.js — Dados + Gallery, Dashboard, Projetos, Calendar, Tasks, Financeiro
 // =====================================================================
 
-const STORAGE_KEY = 'bunkr-data-v2';
+const STORAGE_KEY = 'bunkr-data-v3';
 
 const placeholderImg = (label, bg = '#DDD5C7', fg = '#5C514B') =>
   'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -52,34 +52,111 @@ const DEFAULT_DATA = {
         },
       ],
     },
-    { id: 'financeiro', name: 'Financeiro', archived: false, projects: [] },
-    { id: 'habitos',    name: 'Hábitos',    archived: false, projects: [] },
-    { id: 'carreira',   name: 'Carreira',   archived: false, projects: [] },
-    { id: 'estudo',     name: 'Estudo',     archived: false, projects: [] },
-    { id: 'hobbies',    name: 'Hobbies',    archived: false, projects: [] },
+    { id: 'habitos',  name: 'Hábitos',  archived: false, projects: [] },
+    { id: 'carreira', name: 'Carreira', archived: false, projects: [] },
+    { id: 'estudo',   name: 'Estudo',   archived: false, projects: [] },
+    { id: 'hobbies',  name: 'Hobbies',  archived: false, projects: [] },
   ],
+
+  // -------------------------------------------------------------------
+  // DADOS DA ABA FINANCEIRO (editáveis manualmente aqui ou pela interface)
+  // -------------------------------------------------------------------
+  financeiro: {
+    currentMonth: {
+      label: 'Nov 2026',
+      income: 3366,
+      fixed: 1392,
+      variable: 1594,
+      analysisText: '',
+      breakdown: [
+        { name: 'Moradia',      amount: 1300 },
+        { name: 'Bramex',       amount: 52 },
+        { name: 'Delivery',     amount: 280 },
+        { name: 'Amazon',       amount: 400 },
+        { name: 'Transporte',   amount: 180 },
+        { name: 'Restaurantes', amount: 160 },
+        { name: 'Lazer',        amount: 80 },
+        { name: 'Streaming',    amount: 35 },
+        { name: 'Outros',       amount: 499 },
+      ],
+    },
+    goals: {
+      actingCurrent: 0,
+      actingTarget: 1500,
+      reservaCurrent: 1329,
+      reservaTarget: 3000,
+    },
+    cuts: [
+      {
+        id: 'bramex',
+        icon: '❓',
+        title: 'Cancelar Bramex',
+        saving: '+$52/mês',
+        text: 'Cobrança diária de ~$1.75 que você não reconhece. Pode ser um app de transporte ou assinatura esquecida. Vale investigar e cancelar — é o corte mais fácil e mais imediato.',
+        destination: '→ $52 → Reserva de Emergência',
+        status: 'pending', // 'pending' | 'accepted' | 'ignored'
+      },
+      {
+        id: 'delivery',
+        icon: '🍕',
+        title: 'Delivery -30%',
+        saving: '+$85/mês',
+        text: 'Você gasta ~$280/mês em DoorDash + Uber Eats. Reduzir 30% (3 pedidos a menos por semana) economiza $85 sem eliminar o hábito completamente.',
+        destination: '→ $50 → Acting Classes · $35 → Reserva',
+        status: 'pending',
+      },
+      {
+        id: 'amazon',
+        icon: '🛒',
+        title: 'Amazon com lista',
+        saving: '+$200/mês',
+        text: 'Você compra em rajadas (5–8 pedidos em 1–2 dias), o que indica compras por impulso. Criar uma lista e esperar 48h antes de comprar pode cortar esse gasto pela metade.',
+        destination: '→ $100 → Reserva · $100 → Acting Classes',
+        status: 'pending',
+      },
+    ],
+    history: [
+      { period: 'Mai 2026', income: 3169, expenses: 3011, balance: 158 },
+      { period: 'Jun 2026', income: 3030, expenses: 3218, balance: -188 },
+      { period: 'Jul 2026', income: 3001, expenses: 3142, balance: -141 },
+      { period: 'Ago 2026', income: 2942, expenses: 3267, balance: -325 },
+      { period: 'Set 2026', income: 3148, expenses: 2983, balance: 165 },
+      { period: 'Out 2026', income: 3350, expenses: 3079, balance: 271 },
+    ],
+  },
 };
 
 function loadData() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...structuredClone(DEFAULT_DATA),
+        ...parsed,
+        financeiro: {
+          ...structuredClone(DEFAULT_DATA.financeiro),
+          ...(parsed.financeiro || {}),
+        },
+      };
+    }
   } catch {}
   return structuredClone(DEFAULT_DATA);
 }
 
 let DATA = loadData();
+let finSubTab = 'mes'; // 'mes' | 'goals' | 'cortes' | 'historico'
 
 function saveData() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
   } catch {
-    toast('Imagem muito grande para salvar localmente');
+    toast('Erro ao salvar no navegador');
   }
 }
 
 // ---------------------------------------------------------------------
-// HELPERS DE DOM E CÁLCULO
+// HELPERS DE DOM E FORMATAÇÃO
 // ---------------------------------------------------------------------
 const tela = document.getElementById('tela');
 const abas = document.getElementById('abas');
@@ -107,6 +184,18 @@ function toast(msg) {
   const el = h('div', { class: 'aviso' }, msg);
   document.body.append(el);
   setTimeout(() => el.remove(), 2600);
+}
+
+function fmtUSD(val) {
+  const num = Math.round(Number(val) || 0);
+  return `$${Math.abs(num).toLocaleString('en-US')}`;
+}
+
+function fmtSignedUSD(val) {
+  const num = Math.round(Number(val) || 0);
+  if (num > 0) return `+$${num.toLocaleString('en-US')}`;
+  if (num < 0) return `-$${Math.abs(num).toLocaleString('en-US')}`;
+  return '$0';
 }
 
 function bar(pct) {
@@ -169,6 +258,7 @@ const NAV_TABS = [
   { id: 'dashboard',  label: 'DASHBOARD',  href: '#/dashboard' },
   { id: 'calendar',   label: 'CALENDAR',   href: '#/calendar' },
   { id: 'tasks',      label: 'TASKS',      href: '#/tasks' },
+  { id: 'financeiro', label: 'FINANCEIRO', href: '#/financeiro' },
   { id: 'categorias', label: 'CATEGORIAS', href: '#/categorias' },
 ];
 
@@ -424,12 +514,351 @@ function openAddStepSheet(project) {
 }
 
 // ---------------------------------------------------------------------
-// TELAS
+// MODAIS DA ABA FINANCEIRO (+ Entrada rápida & + Colar análise)
 // ---------------------------------------------------------------------
+function openQuickFinanceModal() {
+  const cm = DATA.financeiro.currentMonth;
+  const form = h('form', {
+    onsubmit: (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      cm.income   = Number(fd.get('income')) || 0;
+      cm.fixed    = Number(fd.get('fixed')) || 0;
+      cm.variable = Number(fd.get('variable')) || 0;
+      if (fd.get('label')?.trim()) cm.label = fd.get('label').trim();
 
-// TELA 1 — GALLERY
+      // Sugestões ignoradas voltam no próximo lançamento mensal
+      DATA.financeiro.cuts.forEach((c) => {
+        if (c.status === 'ignored') c.status = 'pending';
+      });
+
+      saveData();
+      backdrop.remove();
+      toast('Dados do mês atualizados');
+      router();
+    },
+  },
+    h('h2', {}, 'Entrada rápida do mês'),
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Mês / Período'),
+      h('input', { type: 'text', name: 'label', value: cm.label, required: true })),
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Receita total do mês ($)'),
+      h('input', { type: 'number', name: 'income', step: 'any', value: cm.income, required: true })),
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Gastos fixos ($)'),
+      h('input', { type: 'number', name: 'fixed', step: 'any', value: cm.fixed, required: true })),
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Gastos variáveis ($)'),
+      h('input', { type: 'number', name: 'variable', step: 'any', value: cm.variable, required: true })),
+    h('div', { class: 'linha-botoes' },
+      h('button', { type: 'button', class: 'btn btn-leve', onclick: () => backdrop.remove() }, 'Cancelar'),
+      h('button', { type: 'submit', class: 'btn btn-forte' }, 'Salvar e recalcular')));
+
+  const backdrop = h('div', {
+    class: 'folha-fundo',
+    onclick: (e) => { if (e.target === backdrop) backdrop.remove(); },
+  }, h('div', { class: 'folha' }, form));
+
+  document.body.append(backdrop);
+}
+
+function openPasteAnalysisModal() {
+  const cm = DATA.financeiro.currentMonth;
+  const form = h('form', {
+    onsubmit: (e) => {
+      e.preventDefault();
+      cm.analysisText = new FormData(form).get('analysisText').trim();
+      saveData();
+      backdrop.remove();
+      toast('Análise salva');
+      router();
+    },
+  },
+    h('h2', {}, 'Colar análise mensal'),
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Cole aqui o texto gerado pelo Claude'),
+      h('textarea', {
+        name: 'analysisText',
+        style: { minHeight: '180px' },
+        placeholder: 'Cole o resumo ou análise mensal aqui...',
+      }, cm.analysisText || '')),
+    h('div', { class: 'linha-botoes' },
+      h('button', { type: 'button', class: 'btn btn-leve', onclick: () => backdrop.remove() }, 'Cancelar'),
+      h('button', { type: 'submit', class: 'btn btn-forte' }, 'Salvar texto')));
+
+  const backdrop = h('div', {
+    class: 'folha-fundo',
+    onclick: (e) => { if (e.target === backdrop) backdrop.remove(); },
+  }, h('div', { class: 'folha' }, form));
+
+  document.body.append(backdrop);
+}
+
+// ---------------------------------------------------------------------
+// TELA FINANCEIRO (4 SUB-ABAS: Este Mês · Goals · Cortes · Histórico)
+// ---------------------------------------------------------------------
+function viewFinanceiro() {
+  drawTopNav('financeiro');
+  fab.hidden = true;
+
+  const subTabs = [
+    { id: 'mes',       label: 'Este Mês' },
+    { id: 'goals',     label: 'Goals' },
+    { id: 'cortes',    label: 'Cortes' },
+    { id: 'historico', label: 'Histórico' },
+  ];
+
+  const subNav = h('div', { class: 'sub-abas' },
+    subTabs.map((t) =>
+      h('button', {
+        type: 'button',
+        class: 'sub-aba',
+        'aria-current': finSubTab === t.id ? 'true' : 'false',
+        onclick: () => { finSubTab = t.id; router(); },
+      }, t.label)));
+
+  let panel;
+  if (finSubTab === 'mes') panel = renderFinanceiroMes();
+  else if (finSubTab === 'goals') panel = renderFinanceiroGoals();
+  else if (finSubTab === 'cortes') panel = renderFinanceiroCortes();
+  else panel = renderFinanceiroHistorico();
+
+  render(
+    h('div', { class: 'dash-wrap' },
+      subNav,
+      panel));
+}
+
+// ABA 1 — ESTE MÊS
+function renderFinanceiroMes() {
+  const cm = DATA.financeiro.currentMonth;
+  const saldo = cm.income - (cm.fixed + cm.variable);
+  const isPos = saldo >= 0;
+  const maxCat = Math.max(...cm.breakdown.map((b) => b.amount), 1);
+
+  return [
+    // Alerta de status no topo
+    h('div', { class: `fin-alerta ${isPos ? 'pos' : 'neg'}` },
+      h('span', {}, isPos ? '✓' : '⚠️'),
+      h('span', {}, isPos
+        ? `Você economizou ${fmtUSD(saldo)} em ${cm.label}`
+        : `Você gastou ${fmtUSD(Math.abs(saldo))} a mais do que ganhou em ${cm.label}`)),
+
+    // Dois botões de entrada de dados
+    h('div', { class: 'fin-botoes' },
+      h('button', { type: 'button', class: 'btn btn-forte', onclick: openQuickFinanceModal }, '+ Entrada rápida'),
+      h('button', { type: 'button', class: 'btn', onclick: openPasteAnalysisModal }, '+ Colar análise')),
+
+    // Análise colada (se existir)
+    cm.analysisText && h('section', { class: 'bunkr-box' },
+      h('div', { class: 'box-topo' },
+        h('span', { class: 'rotulo' }, `ANÁLISE — ${cm.label}`),
+        h('button', {
+          type: 'button',
+          class: 'btn btn-leve',
+          onclick: () => { cm.analysisText = ''; saveData(); router(); },
+        }, 'Limpar')),
+      h('div', { class: 'analise-box' }, cm.analysisText)),
+
+    // Card do mês atual com 4 linhas
+    h('section', { class: 'bunkr-box' },
+      h('div', { class: 'box-topo' },
+        h('h2', { class: 'cat-titulo' }, cm.label),
+        h('span', { class: `pill-status ${isPos ? 'pos' : 'neg'}` }, fmtSignedUSD(saldo))),
+      h('div', { class: 'fin-linha' },
+        h('span', { class: 'rotulo-suave' }, 'Receita'),
+        h('span', { class: 'fin-valor pos' }, fmtUSD(cm.income))),
+      h('div', { class: 'fin-linha' },
+        h('span', { class: 'rotulo-suave' }, 'Fixos'),
+        h('span', { class: 'fin-valor neg' }, fmtUSD(cm.fixed))),
+      h('div', { class: 'fin-linha' },
+        h('span', { class: 'rotulo-suave' }, 'Variáveis'),
+        h('span', { class: 'fin-valor neg' }, fmtUSD(cm.variable))),
+      h('div', { class: 'fin-linha saldo' },
+        h('span', { class: 'rotulo' }, 'Saldo'),
+        h('span', { class: `fin-valor ${isPos ? 'pos' : 'neg'}` }, fmtSignedUSD(saldo)))),
+
+    // Breakdown de gastos
+    h('section', { class: 'bunkr-box' },
+      h('div', { class: 'box-topo' },
+        h('h2', { class: 'cat-titulo', style: { fontSize: '26px' } }, 'Breakdown de gastos'),
+        h('span', { class: 'rotulo-suave' }, 'PROPORÇÃO')),
+      cm.breakdown.map((b) => {
+        const pct = Math.round((b.amount / maxCat) * 100);
+        return h('div', { class: 'breakdown-row' },
+          h('span', { class: 'rotulo' }, b.name),
+          bar(pct),
+          h('span', { class: 'pct-rust' }, fmtUSD(b.amount)));
+      })),
+  ];
+}
+
+// ABA 2 — GOALS
+function renderFinanceiroGoals() {
+  const g = DATA.financeiro.goals;
+  const actingPct  = Math.min(100, Math.round((g.actingCurrent / g.actingTarget) * 100));
+  const reservaPct = Math.min(100, Math.round((g.reservaCurrent / g.reservaTarget) * 100));
+  const investUnlocked = g.reservaCurrent >= g.reservaTarget;
+
+  return [
+    h('section', { class: 'bunkr-box' },
+      h('div', { class: 'box-topo' },
+        h('h2', { class: 'cat-titulo' }, 'Goals financeiros'),
+        h('span', { class: 'pill-status' }, '3 METAS')),
+
+      h('div', { class: 'lista-simples' },
+        // 1. Acting Classes
+        h('div', { class: 'goal-card' },
+          h('div', { class: 'box-topo', style: { marginBottom: '10px' } },
+            h('h3', { class: 'proj-titulo' }, 'Acting Classes'),
+            h('span', { class: `pill-status ${actingPct >= 100 ? 'pos' : ''}` }, `${actingPct}%`)),
+          bar(actingPct),
+          h('div', { class: 'box-topo', style: { marginTop: '10px', marginBottom: '0' } },
+            h('span', { class: 'rotulo-suave' }, `${fmtUSD(g.actingCurrent)} / ${fmtUSD(g.actingTarget)}`),
+            h('span', { class: 'rotulo-suave' }, `Meta: ${fmtUSD(g.actingTarget)}`)),
+          h('div', { class: 'goal-edit-row' },
+            h('span', { class: 'rotulo-suave' }, 'Valor atual ($):'),
+            h('input', {
+              type: 'number',
+              step: 'any',
+              value: g.actingCurrent,
+              onchange: (e) => {
+                g.actingCurrent = Math.max(0, Number(e.target.value) || 0);
+                saveData();
+                toast('Acting Classes atualizado');
+                router();
+              },
+            }))),
+
+        // 2. Reserva de Emergência
+        h('div', { class: 'goal-card' },
+          h('div', { class: 'box-topo', style: { marginBottom: '10px' } },
+            h('h3', { class: 'proj-titulo' }, 'Reserva de Emergência'),
+            h('span', { class: `pill-status ${reservaPct >= 100 ? 'pos' : ''}` }, `${reservaPct}%`)),
+          bar(reservaPct),
+          h('div', { class: 'box-topo', style: { marginTop: '10px', marginBottom: '0' } },
+            h('span', { class: 'rotulo-suave' }, `${fmtUSD(g.reservaCurrent)} / ${fmtUSD(g.reservaTarget)} (saldo inicial da conta)`),
+            h('span', { class: 'rotulo-suave' }, `Meta: ${fmtUSD(g.reservaTarget)}`)),
+          h('div', { class: 'goal-edit-row' },
+            h('span', { class: 'rotulo-suave' }, 'Valor atual ($):'),
+            h('input', {
+              type: 'number',
+              step: 'any',
+              value: g.reservaCurrent,
+              onchange: (e) => {
+                g.reservaCurrent = Math.max(0, Number(e.target.value) || 0);
+                saveData();
+                toast('Reserva atualizada');
+                router();
+              },
+            }))),
+
+        // 3. Investimento (bloqueado até Reserva atingir $3.000)
+        h('div', { class: `goal-card ${investUnlocked ? '' : 'bloqueado'}` },
+          h('div', { class: 'box-topo', style: { marginBottom: '10px' } },
+            h('h3', { class: 'proj-titulo' }, `${investUnlocked ? '📈' : '🔒'} Investimento`),
+            h('span', { class: 'pill-status' }, investUnlocked ? 'DESBLOQUEADO' : 'BLOQUEADO')),
+          bar(0),
+          h('p', { class: 'rotulo-suave', style: { marginTop: '10px', marginBottom: '0' } },
+            investUnlocked
+              ? 'Reserva atingiu $3.000! Você já pode começar a investir.'
+              : 'Disponível quando a Reserva atingir $3.000')))),
+  ];
+}
+
+// ABA 3 — CORTES
+function renderFinanceiroCortes() {
+  const cuts = DATA.financeiro.cuts;
+  const committed = cuts.filter((c) => c.status === 'accepted');
+  const pending   = cuts.filter((c) => c.status === 'pending');
+
+  return [
+    // Seção Comprometidos (topo)
+    h('section', { class: 'bunkr-box' },
+      h('div', { class: 'box-topo' },
+        h('h2', { class: 'cat-titulo', style: { fontSize: '28px' } }, 'Comprometidos'),
+        h('span', { class: 'pill-status pos' }, `${committed.length}`)),
+      committed.length
+        ? h('div', { class: 'lista-simples' },
+            committed.map((c) =>
+              h('div', { class: 'corte-card comprometido' },
+                h('div', { class: 'box-topo', style: { marginBottom: '6px' } },
+                  h('h3', { class: 'proj-titulo', style: { fontSize: '22px' } }, `${c.icon} ${c.title}`),
+                  h('span', { class: 'pill-status pos' }, c.saving)),
+                h('div', { class: 'corte-destino' }, c.destination),
+                h('div', { class: 'corte-rodape' }, '✓ Comprometido — verificado no próximo extrato'))))
+        : h('p', { class: 'rotulo-suave', style: { margin: 0 } }, 'Nenhum corte comprometido ainda')),
+
+    // Seção Sugestões
+    h('section', { class: 'bunkr-box' },
+      h('div', { class: 'box-topo' },
+        h('h2', { class: 'cat-titulo', style: { fontSize: '28px' } }, 'Sugestões'),
+        h('span', { class: 'rotulo-suave' }, 'mais fácil primeiro')),
+      pending.length
+        ? h('div', { class: 'lista-simples' },
+            pending.map((c) =>
+              h('div', { class: 'corte-card' },
+                h('div', { class: 'box-topo', style: { marginBottom: '8px' } },
+                  h('h3', { class: 'proj-titulo', style: { fontSize: '22px' } }, `${c.icon} ${c.title}`),
+                  h('span', { class: 'pill-status' }, c.saving)),
+                h('p', { class: 'proj-resumo', style: { marginBottom: '8px' } }, c.text),
+                h('div', { class: 'corte-destino' }, c.destination),
+                h('div', { class: 'grupo-acoes-esq' },
+                  h('button', {
+                    type: 'button',
+                    class: 'btn btn-verde',
+                    onclick: () => {
+                      c.status = 'accepted';
+                      saveData();
+                      toast('Corte comprometido!');
+                      router();
+                    },
+                  }, '✓ Aceitar'),
+                  h('button', {
+                    type: 'button',
+                    class: 'btn btn-leve',
+                    onclick: () => {
+                      c.status = 'ignored';
+                      saveData();
+                      toast('Ignorado por agora');
+                      router();
+                    },
+                  }, 'Ignorar por agora')))))
+        : h('div', { class: 'vazio' }, 'Nenhuma sugestão pendente no momento.'),
+      h('p', { class: 'rotulo-suave', style: { textAlign: 'center', marginTop: '16px', marginBottom: 0 } },
+        'Sugestões ignoradas voltam no próximo lançamento mensal.')),
+  ];
+}
+
+// ABA 4 — HISTÓRICO
+function renderFinanceiroHistorico() {
+  const list = DATA.financeiro.history;
+  return [
+    h('section', { class: 'bunkr-box' },
+      h('div', { class: 'box-topo' },
+        h('h2', { class: 'cat-titulo' }, 'Histórico'),
+        h('span', { class: 'pill-status' }, `ÚLTIMOS ${list.length} PERÍODOS`)),
+      h('div', { class: 'lista-simples' },
+        list.map((item) => {
+          const isPos = item.balance >= 0;
+          return h('div', { class: 'hist-card' },
+            h('div', {},
+              h('strong', { style: { fontFamily: 'var(--f-titulo)', fontSize: '22px' } }, item.period),
+              h('div', { class: 'hist-dados', style: { marginTop: '4px' } },
+                `Receita ${fmtUSD(item.income)} · Gastos ${fmtUSD(item.expenses)} · Saldo ${fmtSignedUSD(item.balance)}`)),
+            h('span', { class: `pill-status ${isPos ? 'pos' : 'neg'}` },
+              isPos ? '✓ Positivo' : '✗ Negativo'));
+        }))),
+  ];
+}
+
+// ---------------------------------------------------------------------
+// OUTRAS TELAS (GALLERY, DASHBOARD, PROJETOS, CALENDAR, TASKS, CATEGORIAS)
+// ---------------------------------------------------------------------
 function viewGallery() {
   drawTopNav('gallery');
+  fab.hidden = false;
   fab.onclick = () => openCreateSheet('projetos');
 
   render(
@@ -443,9 +872,9 @@ function viewGallery() {
           h('span', { class: 'gallery-pill' }, item.tag)))));
 }
 
-// TELA 2 — DASHBOARD
 function viewDashboard() {
   drawTopNav('dashboard');
+  fab.hidden = false;
   fab.onclick = () => openCreateSheet('projetos');
 
   render(
@@ -454,9 +883,9 @@ function viewDashboard() {
       activeCategories().map((cat) => renderCategorySummaryCard(cat))));
 }
 
-// TELA 3 — PROJETOS POR CATEGORIA (com Arquivar e Deletar objetivos)
 function viewCategory(catId) {
   drawTopNav('dashboard');
+  fab.hidden = false;
   const visibleCats = activeCategories();
   const cat = DATA.categories.find((c) => c.id === catId) || visibleCats[0];
   if (!cat) { location.hash = '#/categorias'; return; }
@@ -570,9 +999,9 @@ function viewCategory(catId) {
         archivedList.map((p) => renderProjectCard(p, true)))));
 }
 
-// TELA 4 — CALENDAR
 function viewCalendar() {
   drawTopNav('calendar');
+  fab.hidden = false;
   fab.onclick = () => openCreateSheet('projetos');
 
   const items = [];
@@ -602,9 +1031,9 @@ function viewCalendar() {
           : h('div', { class: 'vazio' }, 'Nenhuma data cadastrada.'))));
 }
 
-// TELA 5 — TASKS
 function viewTasks() {
   drawTopNav('tasks');
+  fab.hidden = false;
   fab.onclick = () => openCreateSheet('projetos');
 
   const allSteps = [];
@@ -643,9 +1072,9 @@ function viewTasks() {
           : h('div', { class: 'vazio' }, 'Nenhuma tarefa cadastrada.'))));
 }
 
-// TELA 6 — GERENCIAR CATEGORIAS (Arquivar, Reativar, Deletar e Criar)
 function viewCategories() {
   drawTopNav('categorias');
+  fab.hidden = false;
   fab.onclick = () => openNewCategorySheet();
 
   render(
@@ -697,6 +1126,7 @@ const routes = [
   [/^#\/c\/([\w-]+)$/, (id) => viewCategory(id)],
   [/^#\/calendar$/,    () => viewCalendar()],
   [/^#\/tasks$/,       () => viewTasks()],
+  [/^#\/financeiro$/,  () => viewFinanceiro()],
   [/^#\/categorias$/,  () => viewCategories()],
 ];
 
