@@ -1,5 +1,5 @@
 /* =====================================================================
-   BUNKR — estilos (baseado no layout HOME.pdf + criação, arquivar e deletar)
+   BUNKR — estilos (Gallery, Dashboard, Projetos, Calendar, Tasks, Financeiro)
    ===================================================================== */
 
 :root {
@@ -13,6 +13,12 @@
   --rust-texto:   #A8371F;
   --mauve-pill:   #E6BDC4;
   --mauve-sombra: #DFB5BE;
+
+  --verde-fundo:  #E4F4EC;
+  --verde-texto:  #215E3E;
+  --verde-borda:  #2D7A52;
+  --verm-fundo:   #FCE8E4;
+  --verm-texto:   #9E2A16;
 
   --f-titulo: "Cormorant Garamond", Georgia, serif;
   --f-mono:   "Space Mono", "Courier New", monospace;
@@ -125,7 +131,7 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 112px;
+  min-width: 108px;
   height: 36px;
   padding: 0 18px;
   font-family: var(--f-mono);
@@ -172,6 +178,8 @@ main {
   align-items: center;
   justify-content: center;
 }
+
+.fab[hidden] { display: none; }
 
 .fab:active {
   transform: translate(3px, 3px);
@@ -301,6 +309,16 @@ main {
   white-space: nowrap;
 }
 
+.pill-status.pos {
+  background: var(--verde-fundo);
+  color: var(--verde-texto);
+}
+
+.pill-status.neg {
+  background: var(--verm-fundo);
+  color: var(--verm-texto);
+}
+
 /* Barra de progresso */
 .barra {
   height: 10px;
@@ -318,7 +336,7 @@ main {
   transition: width .25s ease;
 }
 
-/* ---------- TELA DE PROJETOS / SUB-ABAS ------------------------------- */
+/* ---------- SUB-ABAS -------------------------------------------------- */
 .sub-abas {
   display: flex;
   justify-content: center;
@@ -328,7 +346,7 @@ main {
 }
 
 .sub-aba {
-  padding: 4px 16px;
+  padding: 6px 18px;
   font-family: var(--f-mono);
   font-size: 12px;
   letter-spacing: 0.05em;
@@ -343,6 +361,7 @@ main {
   font-weight: 700;
 }
 
+/* ---------- TELA DE PROJETOS ------------------------------------------ */
 .proj-card {
   background: var(--papel);
   border: var(--contorno);
@@ -447,171 +466,66 @@ main {
   gap: 12px;
 }
 
-/* ---------- BOTÕES, FORMULÁRIO & FOLHA (BOTTOM SHEET) ----------------- */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 0 16px;
-  font-family: var(--f-mono);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: var(--papel);
-  color: var(--tinta);
+/* ---------- FINANCEIRO ------------------------------------------------ */
+.fin-alerta {
   border: var(--contorno);
-  border-radius: var(--raio-pill);
-}
-
-.btn-forte {
-  background: var(--rust);
-  color: var(--papel);
-}
-
-.btn-perigo {
-  background: transparent;
-  border-color: transparent;
-  color: var(--rust-texto);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  padding: 0 6px;
-}
-
-.btn-leve {
-  background: transparent;
-  border-color: transparent;
-  color: var(--tinta-suave);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  padding: 0 6px;
-}
-
-.folha-fundo {
-  position: fixed;
-  inset: 0;
-  background: rgba(26, 21, 20, 0.5);
-  z-index: 50;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.folha {
-  width: 100%;
-  max-width: 640px;
-  max-height: 92vh;
-  overflow-y: auto;
-  background: var(--creme);
-  border-top: var(--contorno);
-  border-left: var(--contorno);
-  border-right: var(--contorno);
-  border-radius: 22px 22px 0 0;
-  padding: 24px 20px calc(var(--safe-bottom) + 28px);
-}
-
-.folha h2 {
-  font-size: 30px;
-  margin-bottom: 16px;
-}
-
-.campo {
-  display: block;
-  margin-bottom: 16px;
-}
-
-.campo > span {
-  display: block;
-  margin-bottom: 6px;
-}
-
-input[type="text"],
-input[type="date"],
-textarea,
-select {
-  width: 100%;
-  font-family: var(--f-texto);
-  font-size: 16px;
-  padding: 10px 14px;
-  background: var(--papel);
-  color: var(--tinta);
-  border: var(--contorno);
-  border-radius: 12px;
-}
-
-input[type="file"] {
-  width: 100%;
-  font-family: var(--f-mono);
-  font-size: 13px;
-  padding: 10px;
-  background: var(--papel);
-  border: 1.5px dashed var(--tinta);
-  border-radius: 12px;
-}
-
-textarea {
-  min-height: 76px;
-  resize: vertical;
-}
-
-.preview-upload {
-  margin-top: 10px;
-  width: 100%;
-  max-height: 180px;
-  object-fit: cover;
-  border-radius: 12px;
-  border: var(--contorno);
-  display: none;
-}
-
-.linha-botoes {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-/* ---------- CALENDAR, TASKS & CATEGORIAS ---------------------------- */
-.lista-simples {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.item-linha {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  border-radius: 16px;
   padding: 14px 18px;
-  background: var(--papel);
-  border: var(--contorno);
-  border-radius: 14px;
+  font-size: var(--t-peq);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fin-alerta.pos {
+  background: var(--verde-fundo);
+  color: var(--verde-texto);
+}
+
+.fin-alerta.neg {
+  background: var(--verm-fundo);
+  color: var(--verm-texto);
+}
+
+.fin-botoes {
+  display: flex;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
-.vazio {
-  padding: 24px;
-  text-align: center;
-  border: 1.5px dashed var(--tinta-suave);
-  border-radius: 16px;
-  color: var(--tinta-suave);
-  margin-top: 12px;
+.fin-botoes .btn {
+  flex: 1;
+  min-width: 170px;
 }
 
-.aviso {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(var(--safe-bottom) + 92px);
-  z-index: 60;
-  background: var(--tinta);
-  color: var(--creme);
-  padding: 10px 20px;
-  border-radius: var(--raio-pill);
-  font-family: var(--f-mono);
-  font-size: 13px;
-  white-space: nowrap;
+.fin-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(26, 21, 20, 0.14);
 }
+
+.fin-linha:last-child { border-bottom: 0; }
+
+.fin-linha.saldo {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: var(--contorno);
+  border-bottom: 0;
+  font-weight: 700;
+}
+
+.fin-valor {
+  font-family: var(--f-mono);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.fin-valor.pos { color: var(--verde-texto); }
+.fin-valor.neg { color: var(--verm-texto); }
+
+.analise-box {
+  background: var(--papel);
+  border: var(--cont
