@@ -1,8 +1,8 @@
 // =====================================================================
-// app.js — Dados + Gallery, Dashboard, Projetos, Calendar, Tasks, Financeiro
+// app.js — Gallery, Dashboard, Projetos (com Editar), Calendar Grid + Dia, Tasks, Financeiro
 // =====================================================================
 
-const STORAGE_KEY = 'bunkr-data-v3';
+const STORAGE_KEY = 'bunkr-data-v4';
 
 const placeholderImg = (label, bg = '#DDD5C7', fg = '#5C514B') =>
   'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -50,6 +50,18 @@ const DEFAULT_DATA = {
             { what: 'Publicar versão oficial', status: 'pausado', dueDate: '2026-12-20' },
           ],
         },
+        {
+          id: 'acting-classes',
+          title: 'Acting Classes',
+          summary: 'Pesquisar e me matricular em aulas de atuação em Los Angeles.',
+          archived: false,
+          financialGoalKey: 'acting', // conectado ao goal financeiro Acting Classes
+          steps: [
+            { what: 'Pesquisar escolas de teatro em Los Angeles', status: 'andamento', dueDate: '2026-11-25' },
+            { what: 'Comparar preços e horários das opções', status: 'pausado', dueDate: '2026-12-02' },
+            { what: 'Reservar orçamento mensal para as aulas', status: 'pausado', dueDate: '2026-12-10' },
+          ],
+        },
       ],
     },
     { id: 'habitos',  name: 'Hábitos',  archived: false, projects: [] },
@@ -59,7 +71,37 @@ const DEFAULT_DATA = {
   ],
 
   // -------------------------------------------------------------------
-  // DADOS DA ABA FINANCEIRO (editáveis manualmente aqui ou pela interface)
+  // CALENDÁRIO: eventos pontuais + pagamentos automáticos recorrentes
+  // -------------------------------------------------------------------
+  calendarEvents: [
+    // Exemplo de dias de trabalho / compromissos
+    { id: 'ev-1', date: '2026-11-01', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-2', date: '2026-11-02', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-3', date: '2026-11-03', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-4', date: '2026-11-08', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-5', date: '2026-11-09', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-6', date: '2026-11-10', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-7', date: '2026-11-14', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-8', date: '2026-11-15', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-9', date: '2026-11-16', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-10', date: '2026-11-17', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-11', date: '2026-11-22', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-12', date: '2026-11-23', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-13', date: '2026-11-24', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-14', date: '2026-11-29', title: 'Spa: 10am to 7pm', type: 'work' },
+    { id: 'ev-15', date: '2026-11-30', title: 'Spa: 10am to 7pm', type: 'work' },
+  ],
+
+  // Pagamentos automáticos que vão direto para o Calendário todo mês
+  recurringBills: [
+    { id: 'bill-aluguel', day: 1,  title: 'aluguel', amount: 1300 },
+    { id: 'bill-amazon',  day: 4,  title: 'amazon',  amount: 8 },
+    { id: 'bill-hulu',    day: 20, title: 'hulu',    amount: 8 },
+    { id: 'bill-bofa',    day: 25, title: 'bofa fee', amount: 5 },
+  ],
+
+  // -------------------------------------------------------------------
+  // FINANCEIRO
   // -------------------------------------------------------------------
   financeiro: {
     currentMonth: {
@@ -83,6 +125,7 @@ const DEFAULT_DATA = {
     goals: {
       actingCurrent: 0,
       actingTarget: 1500,
+      actingProjectId: 'acting-classes',
       reservaCurrent: 1329,
       reservaTarget: 3000,
     },
@@ -94,7 +137,7 @@ const DEFAULT_DATA = {
         saving: '+$52/mês',
         text: 'Cobrança diária de ~$1.75 que você não reconhece. Pode ser um app de transporte ou assinatura esquecida. Vale investigar e cancelar — é o corte mais fácil e mais imediato.',
         destination: '→ $52 → Reserva de Emergência',
-        status: 'pending', // 'pending' | 'accepted' | 'ignored'
+        status: 'pending',
       },
       {
         id: 'delivery',
@@ -110,7 +153,7 @@ const DEFAULT_DATA = {
         icon: '🛒',
         title: 'Amazon com lista',
         saving: '+$200/mês',
-        text: 'Você compra em rajadas (5–8 pedidos em 1–2 dias), o que indica compras por impulso. Criar uma lista e esperar 48h antes de comprar pode cortar esse gasto pela metade.',
+        text: 'Você compra na Amazon em rajadas (5–8 pedidos em 1–2 dias), o que indica compras por impulso. Criar uma lista e esperar 48h antes de comprar pode cortar esse gasto pela metade.',
         destination: '→ $100 → Reserva · $100 → Acting Classes',
         status: 'pending',
       },
@@ -145,7 +188,9 @@ function loadData() {
 }
 
 let DATA = loadData();
-let finSubTab = 'mes'; // 'mes' | 'goals' | 'cortes' | 'historico'
+let finSubTab = 'mes';
+let calYear = 2026;
+let calMonth = 10; // 0 = Jan, 10 = Novembro
 
 function saveData() {
   try {
@@ -251,7 +296,7 @@ function compressImage(file, maxWidth = 900) {
 }
 
 // ---------------------------------------------------------------------
-// NAVEGAÇÃO PRINCIPAL
+// NAVEGAÇÃO PRINCIPAL (FIXA — SÓ PALAVRAS SEM BORDA BRANCA)
 // ---------------------------------------------------------------------
 const NAV_TABS = [
   { id: 'gallery',    label: 'GALLERY',    href: '#/gallery' },
@@ -318,7 +363,7 @@ function renderCategorySummaryCard(cat) {
 }
 
 // ---------------------------------------------------------------------
-// FORMULÁRIOS DE CRIAÇÃO (BOTÃO +)
+// FORMULÁRIOS DE CRIAÇÃO E EDIÇÃO DE PROJETOS
 // ---------------------------------------------------------------------
 function openCreateSheet(defaultCategoryId = 'projetos') {
   const visibleCats = activeCategories();
@@ -442,6 +487,152 @@ function openCreateSheet(defaultCategoryId = 'projetos') {
   document.body.append(backdrop);
 }
 
+// Modal de EDIÇÃO DE PROJETO (título, resumo, categoria, steps e foto)
+function openEditProjectSheet(currentCat, project) {
+  let newUploadedImage = null;
+  const existingPhoto = DATA.gallery.find((g) => g.projectId === project.id);
+
+  const preview = h('img', {
+    class: 'preview-upload',
+    alt: 'Prévia da foto',
+    src: existingPhoto ? existingPhoto.image : '',
+    style: existingPhoto ? { display: 'block' } : {},
+  });
+
+  const fileInput = h('input', {
+    type: 'file',
+    accept: 'image/*',
+    onchange: async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      newUploadedImage = await compressImage(file);
+      preview.src = newUploadedImage;
+      preview.style.display = 'block';
+    },
+  });
+
+  // Lista editável dos steps do projeto
+  const editableSteps = project.steps.map((s) => ({ ...s }));
+  const stepsContainer = h('div', {});
+
+  const renderEditableSteps = () => {
+    stepsContainer.replaceChildren(
+      ...editableSteps.map((st, idx) =>
+        h('div', { class: 'edit-step-item' },
+          h('input', {
+            type: 'text',
+            value: st.what,
+            placeholder: 'Descrição do passo',
+            oninput: (e) => { st.what = e.target.value; },
+          }),
+          h('input', {
+            type: 'date',
+            value: st.dueDate || '',
+            style: { maxWidth: '150px' },
+            onchange: (e) => { st.dueDate = e.target.value; },
+          }),
+          h('button', {
+            type: 'button',
+            class: 'btn btn-perigo',
+            onclick: () => {
+              editableSteps.splice(idx, 1);
+              renderEditableSteps();
+            },
+          }, '✕')))
+    );
+  };
+  renderEditableSteps();
+
+  const form = h('form', {
+    onsubmit: (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const newTitle = fd.get('title').trim();
+      if (!newTitle) return;
+
+      const targetCatId = fd.get('categoryId');
+      project.title = newTitle;
+      project.summary = fd.get('summary').trim();
+      project.steps = editableSteps.filter((s) => s.what.trim());
+
+      // Move de categoria se mudou
+      if (targetCatId !== currentCat.id) {
+        currentCat.projects = currentCat.projects.filter((p) => p.id !== project.id);
+        const destCat = DATA.categories.find((c) => c.id === targetCatId);
+        if (destCat) destCat.projects.push(project);
+      }
+
+      // Atualiza foto e legenda na Gallery
+      if (existingPhoto) {
+        existingPhoto.tag = newTitle.toUpperCase();
+        existingPhoto.categoryId = targetCatId;
+        if (newUploadedImage) existingPhoto.image = newUploadedImage;
+      } else if (newUploadedImage) {
+        const hasPlaceholders = DATA.gallery.some((g) => String(g.image).startsWith('data:image/svg+xml'));
+        if (hasPlaceholders) DATA.gallery = [];
+        DATA.gallery.unshift({
+          id: Date.now(),
+          projectId: project.id,
+          tag: newTitle.toUpperCase(),
+          size: 'normal',
+          image: newUploadedImage,
+          categoryId: targetCatId,
+        });
+      }
+
+      saveData();
+      backdrop.remove();
+      toast('Projeto atualizado');
+      location.hash = `#/c/${targetCatId}`;
+      router();
+    },
+  },
+    h('h2', {}, 'Editar projeto'),
+
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Título'),
+      h('input', { type: 'text', name: 'title', value: project.title, required: true })),
+
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Categoria'),
+      h('select', { name: 'categoryId' },
+        activeCategories().map((c) =>
+          h('option', { value: c.id, selected: c.id === currentCat.id }, c.name)))),
+
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Resumo'),
+      h('input', { type: 'text', name: 'summary', value: project.summary || '' })),
+
+    h('div', { class: 'campo' },
+      h('div', { class: 'box-topo', style: { marginBottom: '8px' } },
+        h('span', { class: 'rotulo' }, 'Steps & Prazos'),
+        h('button', {
+          type: 'button',
+          class: 'btn',
+          onclick: () => {
+            editableSteps.push({ what: '', status: 'pausado', dueDate: '' });
+            renderEditableSteps();
+          },
+        }, '+ Linha')),
+      stepsContainer),
+
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Trocar / adicionar foto na Gallery'),
+      fileInput,
+      preview),
+
+    h('div', { class: 'linha-botoes' },
+      h('button', { type: 'button', class: 'btn btn-leve', onclick: () => backdrop.remove() }, 'Cancelar'),
+      h('button', { type: 'submit', class: 'btn btn-forte' }, 'Salvar alterações')));
+
+  const backdrop = h('div', {
+    class: 'folha-fundo',
+    onclick: (e) => { if (e.target === backdrop) backdrop.remove(); },
+  }, h('div', { class: 'folha' }, form));
+
+  document.body.append(backdrop);
+}
+
 function openNewCategorySheet() {
   const form = h('form', {
     onsubmit: (e) => {
@@ -514,6 +705,253 @@ function openAddStepSheet(project) {
 }
 
 // ---------------------------------------------------------------------
+// CALENDÁRIO (IMAGEM 1: GRID MENSAL + PÁGINA DO DIA AO CLICAR)
+// ---------------------------------------------------------------------
+const MONTH_NAMES_EN = [
+  'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+  'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
+];
+const WEEKDAYS_EN = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+// Reúne tudo que cai na data YYYY-MM-DD: eventos, pagamentos automáticos e steps com prazo
+function getItemsForDate(dateStr) {
+  const [, , ddStr] = dateStr.split('-');
+  const dayNum = Number(ddStr);
+
+  const events = (DATA.calendarEvents || []).filter((e) => e.date === dateStr);
+  const bills  = (DATA.recurringBills || []).filter((b) => Number(b.day) === dayNum);
+
+  const steps = [];
+  for (const cat of activeCategories()) {
+    for (const p of activeProjects(cat)) {
+      for (const s of p.steps) {
+        if (s.dueDate === dateStr) {
+          steps.push({ step: s, project: p, category: cat });
+        }
+      }
+    }
+  }
+
+  return { events, bills, steps };
+}
+
+function viewCalendar() {
+  drawTopNav('calendar');
+  fab.hidden = false;
+  fab.onclick = () => {
+    const todayStr = `${calYear}-${pad2(calMonth + 1)}-01`;
+    location.hash = `#/day/${todayStr}`;
+  };
+
+  const firstDayWeekday = new Date(calYear, calMonth, 1).getDay(); // 0 = Sun
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  const cells = [];
+  for (let i = 0; i < firstDayWeekday; i++) {
+    cells.push(h('div', { class: 'cal-cell vazio' }));
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${calYear}-${pad2(calMonth + 1)}-${pad2(day)}`;
+    const weekday = (firstDayWeekday + day - 1) % 7;
+    const { events, bills, steps } = getItemsForDate(dateStr);
+
+    const hasBill = bills.length > 0;
+    const hasWork = events.some((e) => e.type === 'work');
+
+    const cls = [
+      'cal-cell',
+      weekday === 0 ? 'is-sun' : '',
+      hasBill ? 'has-bill' : hasWork ? 'has-work' : '',
+    ].filter(Boolean).join(' ');
+
+    cells.push(
+      h('button', {
+        type: 'button',
+        class: cls,
+        onclick: () => { location.hash = `#/day/${dateStr}`; },
+      },
+        h('span', { class: 'cal-num' }, String(day)),
+        bills.map((b) => h('div', { class: 'cal-ev bill' }, `${b.title} $${b.amount}`)),
+        events.map((ev) => h('div', { class: 'cal-ev' }, ev.title)),
+        steps.map((st) => h('div', { class: 'cal-ev task' }, `• ${st.step.what}`)))
+    );
+  }
+
+  render(
+    h('div', { class: 'cal-wrap' },
+      h('div', { class: 'cal-header' },
+        h('button', {
+          type: 'button',
+          class: 'cal-nav-btn',
+          'aria-label': 'Mês anterior',
+          onclick: () => {
+            calMonth--;
+            if (calMonth < 0) { calMonth = 11; calYear--; }
+            router();
+          },
+        }, '‹'),
+        h('h1', { class: 'cal-mes-titulo' }, `${MONTH_NAMES_EN[calMonth]} ${calYear === 2026 ? '' : calYear}`),
+        h('button', {
+          type: 'button',
+          class: 'cal-nav-btn',
+          'aria-label': 'Próximo mês',
+          onclick: () => {
+            calMonth++;
+            if (calMonth > 11) { calMonth = 0; calYear++; }
+            router();
+          },
+        }, '›')),
+
+      h('div', { class: 'cal-weekdays' },
+        WEEKDAYS_EN.map((w) => h('div', {}, w))),
+
+      h('div', { class: 'cal-grid' }, cells)));
+}
+
+// PÁGINA DO DIA AO CLICAR NUMA DATA DO CALENDÁRIO
+function viewCalendarDay(dateStr) {
+  drawTopNav('calendar');
+  fab.hidden = true;
+
+  const [yyyy, mm, dd] = dateStr.split('-').map(Number);
+  const dateObj = new Date(yyyy, mm - 1, dd);
+  const weekdayName = WEEKDAYS_EN[dateObj.getDay()];
+  const monthName = MONTH_NAMES_EN[mm - 1];
+
+  const { events, bills, steps } = getItemsForDate(dateStr);
+
+  // Formulário rápido inline para adicionar compromisso ou pagamento nesse dia
+  const addForm = h('form', {
+    class: 'bunkr-box',
+    onsubmit: (e) => {
+      e.preventDefault();
+      const fd = new FormData(addForm);
+      const kind = fd.get('kind');
+      const title = fd.get('title').trim();
+      const amount = Number(fd.get('amount')) || 0;
+      if (!title) return;
+
+      if (kind === 'bill') {
+        DATA.recurringBills.push({
+          id: `bill-${Date.now()}`,
+          day: dd,
+          title,
+          amount,
+        });
+        toast('Pagamento automático adicionado');
+      } else {
+        DATA.calendarEvents.push({
+          id: `ev-${Date.now()}`,
+          date: dateStr,
+          title,
+          type: kind, // 'work' | 'note'
+        });
+        toast('Adicionado ao dia');
+      }
+
+      saveData();
+      router();
+    },
+  },
+    h('div', { class: 'box-topo' },
+      h('h3', { class: 'proj-titulo' }, 'Adicionar neste dia')),
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Tipo'),
+      h('select', { name: 'kind' },
+        h('option', { value: 'work' }, 'Trabalho / Compromisso (card verde)'),
+        h('option', { value: 'note' }, 'Nota / Lembrete do dia'),
+        h('option', { value: 'bill' }, `Pagamento automático mensal — todo dia ${dd} (card rosa)`))),
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Descrição'),
+      h('input', { type: 'text', name: 'title', required: true, placeholder: 'Ex: Spa: 10am to 7pm ou spotify' })),
+    h('label', { class: 'campo' },
+      h('span', { class: 'rotulo' }, 'Valor em $ (se for pagamento automático)'),
+      h('input', { type: 'number', name: 'amount', step: 'any', placeholder: 'Ex: 12' })),
+    h('div', { class: 'linha-botoes' },
+      h('button', { type: 'submit', class: 'btn btn-forte' }, '+ Adicionar ao dia')));
+
+  render(
+    h('div', { class: 'dash-wrap' },
+      h('div', { class: 'box-topo' },
+        h('a', { class: 'btn', href: '#/calendar' }, '← Voltar ao calendário'),
+        h('span', { class: 'pill-status' }, `${dd}/${pad2(mm)}/${yyyy}`)),
+
+      h('section', { class: 'bunkr-box' },
+        h('div', { class: 'box-topo' },
+          h('h1', { class: 'cat-titulo' }, `${weekdayName}, ${monthName} ${dd}`),
+          h('span', { class: 'rotulo-suave' }, `${events.length + bills.length + steps.length} itens`)),
+
+        // 1. Pagamentos automáticos (a pagar)
+        bills.length > 0 && h('div', { style: { marginBottom: '18px' } },
+          h('p', { class: 'rotulo', style: { color: 'var(--rust-texto)', marginBottom: '8px' } }, 'Pagamentos automáticos (todo mês)'),
+          h('div', { class: 'lista-simples' },
+            bills.map((b) =>
+              h('div', { class: 'item-linha', style: { background: 'var(--mauve-cal)' } },
+                h('div', {},
+                  h('strong', {}, `${b.title} — ${fmtUSD(b.amount)}`),
+                  h('div', { class: 'rotulo-suave' }, `Débito automático todo dia ${b.day}`)),
+                h('button', {
+                  type: 'button',
+                  class: 'btn btn-perigo',
+                  onclick: () => {
+                    DATA.recurringBills = DATA.recurringBills.filter((item) => item.id !== b.id);
+                    saveData();
+                    toast('Pagamento automático removido');
+                    router();
+                  },
+                }, 'Apagar'))))),
+
+        // 2. Compromissos e turnos do dia
+        events.length > 0 && h('div', { style: { marginBottom: '18px' } },
+          h('p', { class: 'rotulo', style: { marginBottom: '8px' } }, 'Agenda do dia'),
+          h('div', { class: 'lista-simples' },
+            events.map((ev) =>
+              h('div', { class: 'item-linha' },
+                h('strong', {}, ev.title),
+                h('button', {
+                  type: 'button',
+                  class: 'btn btn-perigo',
+                  onclick: () => {
+                    DATA.calendarEvents = DATA.calendarEvents.filter((item) => item.id !== ev.id);
+                    saveData();
+                    toast('Item apagado');
+                    router();
+                  },
+                }, 'Apagar'))))),
+
+        // 3. Tasks / Steps com prazo neste dia
+        steps.length > 0 && h('div', { style: { marginBottom: '18px' } },
+          h('p', { class: 'rotulo', style: { marginBottom: '8px' } }, 'Tasks com prazo hoje'),
+          h('div', { class: 'lista-simples' },
+            steps.map(({ step, project }) =>
+              h('div', {
+                class: `step-row ${step.status}`,
+                style: { cursor: 'pointer' },
+                onclick: () => {
+                  const order = ['pausado', 'andamento', 'concluido'];
+                  step.status = order[(order.indexOf(step.status) + 1) % order.length];
+                  saveData();
+                  router();
+                },
+              },
+                h('div', {},
+                  h('div', { class: 'step-texto' }, step.what),
+                  h('span', { class: 'rotulo-suave' }, `Projeto: ${project.title}`)),
+                h('span', { class: `step-badge ${step.status}` },
+                  step.status === 'concluido' ? '✓ Concluído' : step.status === 'andamento' ? '▶ Andamento' : '‖ Pendente'))))),
+
+        (events.length + bills.length + steps.length === 0) &&
+          h('div', { class: 'vazio' }, 'Nada agendado para este dia ainda.')),
+
+      addForm));
+}
+
+// ---------------------------------------------------------------------
 // MODAIS DA ABA FINANCEIRO (+ Entrada rápida & + Colar análise)
 // ---------------------------------------------------------------------
 function openQuickFinanceModal() {
@@ -527,7 +965,6 @@ function openQuickFinanceModal() {
       cm.variable = Number(fd.get('variable')) || 0;
       if (fd.get('label')?.trim()) cm.label = fd.get('label').trim();
 
-      // Sugestões ignoradas voltam no próximo lançamento mensal
       DATA.financeiro.cuts.forEach((c) => {
         if (c.status === 'ignored') c.status = 'pending';
       });
@@ -630,7 +1067,6 @@ function viewFinanceiro() {
       panel));
 }
 
-// ABA 1 — ESTE MÊS
 function renderFinanceiroMes() {
   const cm = DATA.financeiro.currentMonth;
   const saldo = cm.income - (cm.fixed + cm.variable);
@@ -638,19 +1074,16 @@ function renderFinanceiroMes() {
   const maxCat = Math.max(...cm.breakdown.map((b) => b.amount), 1);
 
   return [
-    // Alerta de status no topo
     h('div', { class: `fin-alerta ${isPos ? 'pos' : 'neg'}` },
       h('span', {}, isPos ? '✓' : '⚠️'),
       h('span', {}, isPos
         ? `Você economizou ${fmtUSD(saldo)} em ${cm.label}`
         : `Você gastou ${fmtUSD(Math.abs(saldo))} a mais do que ganhou em ${cm.label}`)),
 
-    // Dois botões de entrada de dados
     h('div', { class: 'fin-botoes' },
       h('button', { type: 'button', class: 'btn btn-forte', onclick: openQuickFinanceModal }, '+ Entrada rápida'),
       h('button', { type: 'button', class: 'btn', onclick: openPasteAnalysisModal }, '+ Colar análise')),
 
-    // Análise colada (se existir)
     cm.analysisText && h('section', { class: 'bunkr-box' },
       h('div', { class: 'box-topo' },
         h('span', { class: 'rotulo' }, `ANÁLISE — ${cm.label}`),
@@ -661,7 +1094,6 @@ function renderFinanceiroMes() {
         }, 'Limpar')),
       h('div', { class: 'analise-box' }, cm.analysisText)),
 
-    // Card do mês atual com 4 linhas
     h('section', { class: 'bunkr-box' },
       h('div', { class: 'box-topo' },
         h('h2', { class: 'cat-titulo' }, cm.label),
@@ -679,7 +1111,6 @@ function renderFinanceiroMes() {
         h('span', { class: 'rotulo' }, 'Saldo'),
         h('span', { class: `fin-valor ${isPos ? 'pos' : 'neg'}` }, fmtSignedUSD(saldo)))),
 
-    // Breakdown de gastos
     h('section', { class: 'bunkr-box' },
       h('div', { class: 'box-topo' },
         h('h2', { class: 'cat-titulo', style: { fontSize: '26px' } }, 'Breakdown de gastos'),
@@ -694,7 +1125,6 @@ function renderFinanceiroMes() {
   ];
 }
 
-// ABA 2 — GOALS
 function renderFinanceiroGoals() {
   const g = DATA.financeiro.goals;
   const actingPct  = Math.min(100, Math.round((g.actingCurrent / g.actingTarget) * 100));
@@ -708,7 +1138,7 @@ function renderFinanceiroGoals() {
         h('span', { class: 'pill-status' }, '3 METAS')),
 
       h('div', { class: 'lista-simples' },
-        // 1. Acting Classes
+        // 1. Acting Classes (conectado ao projeto Acting Classes)
         h('div', { class: 'goal-card' },
           h('div', { class: 'box-topo', style: { marginBottom: '10px' } },
             h('h3', { class: 'proj-titulo' }, 'Acting Classes'),
@@ -718,18 +1148,20 @@ function renderFinanceiroGoals() {
             h('span', { class: 'rotulo-suave' }, `${fmtUSD(g.actingCurrent)} / ${fmtUSD(g.actingTarget)}`),
             h('span', { class: 'rotulo-suave' }, `Meta: ${fmtUSD(g.actingTarget)}`)),
           h('div', { class: 'goal-edit-row' },
-            h('span', { class: 'rotulo-suave' }, 'Valor atual ($):'),
-            h('input', {
-              type: 'number',
-              step: 'any',
-              value: g.actingCurrent,
-              onchange: (e) => {
-                g.actingCurrent = Math.max(0, Number(e.target.value) || 0);
-                saveData();
-                toast('Acting Classes atualizado');
-                router();
-              },
-            }))),
+            h('div', { class: 'grupo-acoes-esq' },
+              h('span', { class: 'rotulo-suave' }, 'Valor atual ($):'),
+              h('input', {
+                type: 'number',
+                step: 'any',
+                value: g.actingCurrent,
+                onchange: (e) => {
+                  g.actingCurrent = Math.max(0, Number(e.target.value) || 0);
+                  saveData();
+                  toast('Acting Classes atualizado');
+                  router();
+                },
+              })),
+            h('a', { class: 'btn', href: '#/c/projetos' }, 'Ver projeto →'))),
 
         // 2. Reserva de Emergência
         h('div', { class: 'goal-card' },
@@ -741,20 +1173,21 @@ function renderFinanceiroGoals() {
             h('span', { class: 'rotulo-suave' }, `${fmtUSD(g.reservaCurrent)} / ${fmtUSD(g.reservaTarget)} (saldo inicial da conta)`),
             h('span', { class: 'rotulo-suave' }, `Meta: ${fmtUSD(g.reservaTarget)}`)),
           h('div', { class: 'goal-edit-row' },
-            h('span', { class: 'rotulo-suave' }, 'Valor atual ($):'),
-            h('input', {
-              type: 'number',
-              step: 'any',
-              value: g.reservaCurrent,
-              onchange: (e) => {
-                g.reservaCurrent = Math.max(0, Number(e.target.value) || 0);
-                saveData();
-                toast('Reserva atualizada');
-                router();
-              },
-            }))),
+            h('div', { class: 'grupo-acoes-esq' },
+              h('span', { class: 'rotulo-suave' }, 'Valor atual ($):'),
+              h('input', {
+                type: 'number',
+                step: 'any',
+                value: g.reservaCurrent,
+                onchange: (e) => {
+                  g.reservaCurrent = Math.max(0, Number(e.target.value) || 0);
+                  saveData();
+                  toast('Reserva atualizada');
+                  router();
+                },
+              })))),
 
-        // 3. Investimento (bloqueado até Reserva atingir $3.000)
+        // 3. Investimento (bloqueado)
         h('div', { class: `goal-card ${investUnlocked ? '' : 'bloqueado'}` },
           h('div', { class: 'box-topo', style: { marginBottom: '10px' } },
             h('h3', { class: 'proj-titulo' }, `${investUnlocked ? '📈' : '🔒'} Investimento`),
@@ -767,14 +1200,12 @@ function renderFinanceiroGoals() {
   ];
 }
 
-// ABA 3 — CORTES
 function renderFinanceiroCortes() {
   const cuts = DATA.financeiro.cuts;
   const committed = cuts.filter((c) => c.status === 'accepted');
   const pending   = cuts.filter((c) => c.status === 'pending');
 
   return [
-    // Seção Comprometidos (topo)
     h('section', { class: 'bunkr-box' },
       h('div', { class: 'box-topo' },
         h('h2', { class: 'cat-titulo', style: { fontSize: '28px' } }, 'Comprometidos'),
@@ -790,7 +1221,6 @@ function renderFinanceiroCortes() {
                 h('div', { class: 'corte-rodape' }, '✓ Comprometido — verificado no próximo extrato'))))
         : h('p', { class: 'rotulo-suave', style: { margin: 0 } }, 'Nenhum corte comprometido ainda')),
 
-    // Seção Sugestões
     h('section', { class: 'bunkr-box' },
       h('div', { class: 'box-topo' },
         h('h2', { class: 'cat-titulo', style: { fontSize: '28px' } }, 'Sugestões'),
@@ -831,7 +1261,6 @@ function renderFinanceiroCortes() {
   ];
 }
 
-// ABA 4 — HISTÓRICO
 function renderFinanceiroHistorico() {
   const list = DATA.financeiro.history;
   return [
@@ -854,7 +1283,7 @@ function renderFinanceiroHistorico() {
 }
 
 // ---------------------------------------------------------------------
-// OUTRAS TELAS (GALLERY, DASHBOARD, PROJETOS, CALENDAR, TASKS, CATEGORIAS)
+// OUTRAS TELAS (GALLERY, DASHBOARD, PROJETOS COM EDITAR, TASKS, CATEGORIAS)
 // ---------------------------------------------------------------------
 function viewGallery() {
   drawTopNav('gallery');
@@ -910,6 +1339,8 @@ function viewCategory(catId) {
 
   const renderProjectCard = (p, isArchived = false) => {
     const st = projectStats(p);
+    const finGoals = DATA.financeiro.goals;
+    const isLinkedActing = p.financialGoalKey === 'acting' || p.id === 'acting-classes';
 
     const stepsBox = h('div', { class: 'proj-steps' },
       p.steps.map((s) =>
@@ -923,6 +1354,11 @@ function viewCategory(catId) {
             s.status === 'concluido' ? '✓ Concluído' : s.status === 'andamento' ? '▶ Andamento' : '‖ Pendente'))),
       h('div', { class: 'proj-acoes' },
         h('div', { class: 'grupo-acoes-esq' },
+          !isArchived && h('button', {
+            type: 'button',
+            class: 'btn',
+            onclick: () => openEditProjectSheet(cat, p),
+          }, 'Editar'),
           h('button', {
             type: 'button',
             class: 'btn btn-leve',
@@ -969,6 +1405,11 @@ function viewCategory(catId) {
         h('h3', { class: 'proj-titulo' }, p.title),
         h('span', { class: 'rotulo' }, `${st.done}/${st.total} Steps (${st.pct}%)`)),
       p.summary && h('p', { class: 'proj-resumo' }, p.summary),
+      isLinkedActing && h('a', {
+        class: 'proj-fin-tag',
+        href: '#/financeiro',
+        onclick: (e) => { e.stopPropagation(); finSubTab = 'goals'; },
+      }, `Goal Financeiro: ${fmtUSD(finGoals.actingCurrent)} / ${fmtUSD(finGoals.actingTarget)} →`),
       bar(st.pct));
 
     return h('div', { class: `proj-card ${isArchived ? 'arquivado' : ''}` }, head, stepsBox);
@@ -997,38 +1438,6 @@ function viewCategory(catId) {
           h('h3', { class: 'cat-titulo', style: { fontSize: '26px' } }, 'Arquivados'),
           h('span', { class: 'pill-status' }, `${archivedList.length}`)),
         archivedList.map((p) => renderProjectCard(p, true)))));
-}
-
-function viewCalendar() {
-  drawTopNav('calendar');
-  fab.hidden = false;
-  fab.onclick = () => openCreateSheet('projetos');
-
-  const items = [];
-  for (const cat of activeCategories()) {
-    for (const p of activeProjects(cat)) {
-      for (const s of p.steps) {
-        if (s.dueDate) items.push({ ...s, project: p.title, category: cat.name });
-      }
-    }
-  }
-  items.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-
-  render(
-    h('div', { class: 'dash-wrap' },
-      h('section', { class: 'bunkr-box' },
-        h('div', { class: 'box-topo' },
-          h('h2', { class: 'cat-titulo' }, 'Calendar'),
-          h('span', { class: 'pill-status' }, `${items.length} DATAS`)),
-        items.length
-          ? h('div', { class: 'lista-simples' },
-              items.map((it) =>
-                h('div', { class: 'item-linha' },
-                  h('div', {},
-                    h('strong', {}, it.what),
-                    h('div', { class: 'rotulo-suave', style: { marginTop: '4px' } }, `${it.category} · ${it.project}`)),
-                  h('span', { class: 'pill-status' }, it.dueDate.split('-').reverse().join('/')))))
-          : h('div', { class: 'vazio' }, 'Nenhuma data cadastrada.'))));
 }
 
 function viewTasks() {
@@ -1120,14 +1529,15 @@ function viewCategories() {
 // ROTEADOR
 // ---------------------------------------------------------------------
 const routes = [
-  [/^#\/?$/,           () => viewGallery()],
-  [/^#\/gallery$/,     () => viewGallery()],
-  [/^#\/dashboard$/,   () => viewDashboard()],
-  [/^#\/c\/([\w-]+)$/, (id) => viewCategory(id)],
-  [/^#\/calendar$/,    () => viewCalendar()],
-  [/^#\/tasks$/,       () => viewTasks()],
-  [/^#\/financeiro$/,  () => viewFinanceiro()],
-  [/^#\/categorias$/,  () => viewCategories()],
+  [/^#\/?$/,                    () => viewGallery()],
+  [/^#\/gallery$/,              () => viewGallery()],
+  [/^#\/dashboard$/,            () => viewDashboard()],
+  [/^#\/c\/([\w-]+)$/,          (id) => viewCategory(id)],
+  [/^#\/calendar$/,             () => viewCalendar()],
+  [/^#\/day\/(\d{4}-\d{2}-\d{2})$/, (date) => viewCalendarDay(date)],
+  [/^#\/tasks$/,                () => viewTasks()],
+  [/^#\/financeiro$/,           () => viewFinanceiro()],
+  [/^#\/categorias$/,           () => viewCategories()],
 ];
 
 function router() {
