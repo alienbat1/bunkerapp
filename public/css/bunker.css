@@ -1,5 +1,5 @@
 /* =====================================================================
-   BUNKR — estilos (Gallery, Dashboard, Projetos, Calendar, Tasks, Financeiro)
+   BUNKR — estilos (Menus diferenciados, Calendário Grid + Dia, Editar Projetos, Financeiro)
    ===================================================================== */
 
 :root {
@@ -13,6 +13,9 @@
   --rust-texto:   #A8371F;
   --mauve-pill:   #E6BDC4;
   --mauve-sombra: #DFB5BE;
+  --mauve-cal:    #EED6DC;
+  --sage-cal:     #B0B8A8;
+  --header-cal:   #9E98A6;
 
   --verde-fundo:  #E4F4EC;
   --verde-texto:  #215E3E;
@@ -91,12 +94,13 @@ p { margin: 0 0 var(--e3); }
 button { font: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 
-/* ---------- TOPO & ABAS ----------------------------------------------- */
+/* ---------- TOPO & MENU PRINCIPAL FIXO (SEM BORDA BRANCA) ------------- */
 .topo {
   position: sticky;
   top: 0;
   z-index: 20;
   background: var(--creme);
+  border-bottom: 1px solid rgba(26, 21, 20, 0.14);
 }
 
 .topo-marca {
@@ -121,9 +125,9 @@ a { color: inherit; text-decoration: none; }
 .abas {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 24px;
   flex-wrap: wrap;
-  padding: 16px var(--e4);
+  padding: 12px var(--e4);
   background: var(--creme);
 }
 
@@ -131,29 +135,61 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 108px;
-  height: 36px;
-  padding: 0 18px;
+  padding: 4px 2px;
+  font-family: var(--f-mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--tinta-suave);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  transition: color .15s, border-color .15s;
+}
+
+.aba:hover {
+  color: var(--tinta);
+}
+
+.aba[aria-current="true"] {
+  color: var(--rust-texto);
+  font-weight: 700;
+  border-bottom-color: var(--rust-texto);
+}
+
+/* ---------- SUB-MENUS DE JANELA (EM PÍLULA COM CONTORNO) --------------- */
+.sub-abas {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.sub-aba {
+  padding: 6px 18px;
   font-family: var(--f-mono);
   font-size: 12px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   background: var(--papel);
   color: var(--tinta);
   border: var(--contorno);
   border-radius: var(--raio-pill);
-  transition: background .15s, color .15s;
 }
 
-.aba[aria-current="true"] {
+.sub-aba[aria-current="true"] {
   background: var(--tinta);
   color: var(--mauve-pill);
   border-color: var(--rust-texto);
+  font-weight: 700;
 }
 
 /* ---------- CONTEÚDO PRINCIPAL ---------------------------------------- */
 main {
-  padding: var(--e2) var(--e4) calc(var(--safe-bottom) + 110px);
+  padding: var(--e3) var(--e4) calc(var(--safe-bottom) + 110px);
   max-width: 980px;
   margin: 0 auto;
 }
@@ -242,6 +278,7 @@ main {
     grid-row: span 2;
   }
   .topo-marca .marca { padding-left: 0; }
+  .abas { gap: 14px; }
 }
 
 /* ---------- DASHBOARD & CARDS BEGE COM SOMBRA MAUVE ------------------- */
@@ -336,29 +373,142 @@ main {
   transition: width .25s ease;
 }
 
-/* ---------- SUB-ABAS -------------------------------------------------- */
-.sub-abas {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 4px;
+/* ---------- CALENDÁRIO MENSAL (ESTILO IMAGEM 1) + TELA DO DIA --------- */
+.cal-wrap {
+  max-width: 820px;
+  margin: 0 auto;
 }
 
-.sub-aba {
-  padding: 6px 18px;
-  font-family: var(--f-mono);
-  font-size: 12px;
-  letter-spacing: 0.05em;
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.cal-mes-titulo {
+  font-family: var(--f-titulo);
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.cal-nav-btn {
   background: var(--papel);
   border: var(--contorno);
   border-radius: var(--raio-pill);
+  width: 36px;
+  height: 36px;
+  font-family: var(--f-mono);
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.sub-aba[aria-current="true"] {
-  background: var(--mauve-pill);
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  background: var(--header-cal);
+  color: var(--papel);
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  text-align: center;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.cal-cell {
+  min-height: 98px;
+  background: var(--papel);
+  border: 1.5px solid var(--mauve-sombra);
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  text-align: left;
+  transition: transform .1s, border-color .1s;
+}
+
+.cal-cell:hover {
+  border-color: var(--tinta);
+  transform: translateY(-1px);
+}
+
+.cal-cell.vazio {
+  background: transparent;
+  border-color: transparent;
+  pointer-events: none;
+}
+
+.cal-cell.has-work {
+  background: var(--sage-cal);
+  border-color: var(--sage-cal);
+}
+
+.cal-cell.has-bill {
+  background: var(--mauve-cal);
+  border-color: var(--mauve-sombra);
+}
+
+.cal-num {
+  align-self: flex-end;
+  font-family: var(--f-titulo);
+  font-size: 22px;
   font-weight: 700;
+  line-height: 1;
+  color: var(--tinta);
+  margin-bottom: 4px;
+}
+
+.cal-cell.is-sun .cal-num,
+.cal-cell.has-bill .cal-num {
+  color: var(--rust);
+}
+
+.cal-ev {
+  font-family: var(--f-titulo);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.25;
+  color: var(--tinta);
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-ev.bill {
+  color: var(--rust-texto);
+  font-weight: 600;
+}
+
+.cal-ev.task {
+  font-family: var(--f-mono);
+  font-style: normal;
+  font-size: 10px;
+  color: var(--tinta);
+}
+
+@media (max-width: 680px) {
+  .cal-weekdays { font-size: 9px; padding: 6px 4px; gap: 4px; }
+  .cal-grid { gap: 4px; }
+  .cal-cell { min-height: 76px; padding: 4px 5px; }
+  .cal-num { font-size: 16px; }
+  .cal-ev { font-size: 11px; }
 }
 
 /* ---------- TELA DE PROJETOS ------------------------------------------ */
@@ -400,6 +550,20 @@ main {
 .proj-resumo {
   color: var(--tinta-suave);
   font-size: var(--t-peq);
+  margin-bottom: 10px;
+}
+
+.proj-fin-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--verde-fundo);
+  color: var(--verde-texto);
+  border: 1px solid var(--verde-borda);
+  border-radius: var(--raio-pill);
+  padding: 3px 12px;
+  font-family: var(--f-mono);
+  font-size: 11px;
   margin-bottom: 10px;
 }
 
@@ -464,6 +628,7 @@ main {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 /* ---------- FINANCEIRO ------------------------------------------------ */
@@ -561,6 +726,7 @@ main {
 .goal-edit-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   margin-top: 12px;
   flex-wrap: wrap;
@@ -749,7 +915,14 @@ textarea {
   margin-top: 20px;
 }
 
-/* ---------- CALENDAR, TASKS & CATEGORIAS ---------------------------- */
+.edit-step-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+/* ---------- LISTAS & AVISOS ------------------------------------------- */
 .lista-simples {
   display: flex;
   flex-direction: column;
