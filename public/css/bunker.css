@@ -1,5 +1,5 @@
 /* =====================================================================
-   BUNKR — estilos (baseado no layout HOME.pdf + criação e upload)
+   BUNKR — estilos (baseado no layout HOME.pdf + criação, arquivar e deletar)
    ===================================================================== */
 
 :root {
@@ -259,6 +259,7 @@ main {
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .visao-linha {
@@ -350,6 +351,11 @@ main {
   margin-top: 14px;
 }
 
+.proj-card.arquivado {
+  opacity: 0.72;
+  background: var(--creme);
+}
+
 .proj-cabeca {
   width: 100%;
   text-align: left;
@@ -432,6 +438,13 @@ main {
   align-items: center;
   gap: 10px;
   margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.grupo-acoes-esq {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 /* ---------- BOTÕES, FORMULÁRIO & FOLHA (BOTTOM SHEET) ----------------- */
@@ -440,7 +453,7 @@ main {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 40px;
+  min-height: 36px;
   padding: 0 16px;
   font-family: var(--f-mono);
   font-size: 12px;
@@ -458,11 +471,22 @@ main {
   color: var(--papel);
 }
 
+.btn-perigo {
+  background: transparent;
+  border-color: transparent;
+  color: var(--rust-texto);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  padding: 0 6px;
+}
+
 .btn-leve {
   background: transparent;
   border-color: transparent;
+  color: var(--tinta-suave);
   text-decoration: underline;
   text-underline-offset: 4px;
+  padding: 0 6px;
 }
 
 .folha-fundo {
@@ -501,13 +525,6 @@ main {
 .campo > span {
   display: block;
   margin-bottom: 6px;
-}
-
-.campo small {
-  display: block;
-  color: var(--tinta-suave);
-  font-size: 13px;
-  margin-top: 4px;
 }
 
 input[type="text"],
@@ -556,7 +573,7 @@ textarea {
   margin-top: 20px;
 }
 
-/* ---------- CALENDAR & TASKS ------------------------------------------ */
+/* ---------- CALENDAR, TASKS & CATEGORIAS ---------------------------- */
 .lista-simples {
   display: flex;
   flex-direction: column;
@@ -572,6 +589,7 @@ textarea {
   background: var(--papel);
   border: var(--contorno);
   border-radius: 14px;
+  flex-wrap: wrap;
 }
 
 .vazio {
