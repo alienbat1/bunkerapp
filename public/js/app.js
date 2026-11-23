@@ -1309,7 +1309,8 @@ function viewDashboard() {
   render(
     h('div', { class: 'dash-wrap' },
       renderYearOverviewBox(),
-      activeCategories().map((cat) => renderCategorySummaryCard(cat))));
+      h('div', { class: 'dash-cats-grid' },
+        activeCategories().map((cat) => renderCategorySummaryCard(cat)))));
 }
 
 function viewCategory(catId) {
